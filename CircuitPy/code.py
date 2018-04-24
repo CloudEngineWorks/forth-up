@@ -10,41 +10,47 @@ red.direction = Direction.OUTPUT
 #green = DigitalInOut(board.D2)
 #green.direction = Direction.OUTPUT
 
+# ToDo: make lamda notation
+#       make parser for easy input (trivial to split on spaces)
+#       ui/repl
 
-fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
-       'abs': {'arity': 1, 'pl':['0--noop', '0--inverse', 'if-then']},
-       'inverse': {'arity': 1, 'pl':[-1, '*']},
-       'not': {'arity': 1, 'pl':[0, 1, 'if-then-else']},
-       'noop': {'arity': 0, 'pl':[]},
-       'red': {'arity': 1, 'pl':['.abs', 'redLED']},
-       'green': {'arity': 1, 'pl':['.abs', 'greenLED']},
-       'redLED': {'arity': 1, 'pl':[]},
-       'greenLED': {'arity': 1, 'pl':[]},
-       'dup2': {'arity': 2, 'pl':[]},
-       'fact': {'arity': 1, 'pl':['dup', '0--fact_aux', 'if-then']},
-       'fact_aux': {'arity': 2, 'pl':['dup2', '*', 'swap', -1, '+', 'swap', 'fact']},
-       'count-down': {'arity': 1, 'pl':['dup', -1, '+', '0--count-down_aux', 'if-then']},
-       'count-down_aux': {'arity': 2, 'pl':['dup', -1, '+', 'count-down']},
-       'count-up': {'arity': 2,     'pl':['dup2', 'inverse', '+', '0--count-up_aux', '0--drop', 'if-then-else']},
-       'count-up_aux': {'arity': 2, 'pl':['>R', 'dup', 1, '+', 'R>', 'count-up']},
-       '+': {'arity': 2, 'pl':[]},
-       '*': {'arity': 2, 'pl':[]},
-       'repeat': {'arity': 2, 'pl':[]},
-       'assert': {'arity': 2, 'pl':['eq', 'assertion true', 'assertion false', 'if-then-else']},
-       'assert-n': {'arity': 2, 'pl':['dup', '>R', '0--assert-n-load', 'if-then', '0--assert-n-unload', 'if-then', 'R>', 'drop']},
-       'assert-n-load': {'arity': 2, 'pl':['dup', '>R', '0--assert', 'if-then', 'R>', 'drop']},
-       'assert-n-unload': {'arity': 2, 'pl':['dup', '>R', '0--assert', 'if-then', 'R>', 'drop']},
-       'if-then': {'arity': 2, 'pl':[]},
-       'if-then-else': {'arity': 3, 'pl':[]},
-       'timeOut': {'arity': 2, 'pl':[]},
-       'dup': {'arity': 1, 'pl':[]},
-       'swap': {'arity': 2, 'pl':[]},
-       'drop': {'arity': 2, 'pl':[]},
-       'eq': {'arity': 2, 'pl':[]},
-       '>R': {'arity': 1, 'pl':[]},
-       'R>': {'arity': 0, 'pl':[]},
-       '>Q': {'arity': 1, 'pl':[]},
-       'Q>': {'arity': 0, 'pl':[]}
+fundi = {'rotary':['0--green', '0--red', 'if-then-else'],
+       'abs': ['0--noop', '0--inverse', 'if-then'],
+       'inverse': [-1, '*'],
+       'not': [0, 1, 'if-then-else'],
+       'noop': [],
+       'red': ['.abs', 'redLED'],
+       'green': ['.abs', 'greenLED'],
+       'redLED': [],
+       'greenLED': [],
+       'dup2': [],
+       'fact': ['dup', '0--fact_aux', 'if-then'],
+       'fact_aux': ['dup2', '*', 'swap', -1, '+', 'swap', 'fact'],
+       'count-down': ['dup', -1, '+', '0--count-down_aux', 'if-then'],
+       'count-down_aux': ['dup', -1, '+', 'count-down'],
+       'count-up': ['dup2', 'inverse', '+', '0--count-up_aux', '0--drop', 'if-then-else'],
+       'count-up_aux': ['>R', 'dup', 1, '+', '<R', 'count-up'],
+       '+': [],
+       '*': [],
+       'repeat': [],
+       'assert': ['eq', 'assertion true', 'assertion false', 'if-then-else'],
+       'assert-n': ['n>R', '0--assert-n-load', 'if-then', '0--assert-n-unload', 'if-then', '<R', 'drop'],
+       'assert-n-comp': ['>R', '0--assert', 'if-then', '<R', 'drop'],
+       'assert-n-unload': ['dup', '>R', '0--assert', 'if-then', '<R', 'drop'],
+       'if-then': [],
+       'if-then-else': [],
+       'timeOut': [],
+       'dup': [],
+       'swap': [],
+       'drop': [],
+       'eq': [],
+       '>R': [],
+       'n>R': ['dup','>Q', '0--rq-repeat', 'if-then'],
+       'rq-repeat': ['>R', 'Q>',  -1, '+', 'n>R'],
+       '<R': [],
+       'n<R': [],
+       '>Q': [],
+       'Q>': []
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
@@ -55,8 +61,10 @@ facts = {}
 #program_list = [1, 4, 'fact']
 #program_list = [4, 'count-down']
 #program_list = [1, 4, 'count-up']
-#program_list = [1, '>R', 'R>', 1, 'assert']
-program_list = [1, 2, 1, 2, 2, 'assert-n']
+#program_list = [1, '>R', '<R', 1, 'assert']
+#program_list = [1, 2, 1, 2, 2, 'assert-n']
+#program_list = [1, 2, 5, 2, 'n>R', '<R', '<R']
+program_list = [1, 2, 5, '>Q', '>Q', 'Q>', 'Q>']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
@@ -95,7 +103,6 @@ def run(pl, vs, fun, rs, q):
             vs.append(next)
             continue
 
-        # if-then (conditional-exp funciton -- ) post-fix if-then (e.g. 1 n_args n_arity_function if-then)
         if next == 'if-then':
             then_block = vs.pop()
             (then_args, then_block) = getArgs(then_block, vs)
@@ -162,7 +169,7 @@ def run(pl, vs, fun, rs, q):
             rs.append(v)
             continue
         
-        if next == 'R>':
+        if next == '<R':
             v = rs.pop()
             vs.append(v)
             continue
@@ -236,18 +243,14 @@ def run(pl, vs, fun, rs, q):
             continue
         
         if next in fun.keys():
-            #print('apply function', next, 'arity', fun[next]['arity'], fun[next]['pl'], 'to', pl)
-            #vs.extend(fun[next]['pl'][:-1])
-            #pl.insert(0, fun[next]['pl'][-1])
-            ##pl.extend(fun[next]['pl'])
-            pl = fun[next]['pl'] + pl
+            pl = fun[next] + pl
             continue
         
 
 def getArgs(block, vs):
     args = []
     if isinstance(block, str) and block[1:3] == '--':
-        # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
+        # eg. 3--my-fn will consume 3 arguments and the name of the function is 'my-fn'
         arity = int(block[:1])
         block = block[3:]
         print('block', block)
