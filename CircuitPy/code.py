@@ -20,8 +20,9 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'green': {'arity': 1, 'pl':['.abs', 'greenLED']},
        'redLED': {'arity': 1, 'pl':[]},
        'greenLED': {'arity': 1, 'pl':[]},
+       'dup2': {'arity': 2, 'pl':[]},
        'fact': {'arity': 1, 'pl':['dup', '0--fact_aux', 'if-then']},
-       'fact_aux': {'arity': 2, 'pl':['dup', '*', 'swap', -1, '+', 'swap']},
+       'fact_aux': {'arity': 2, 'pl':['dup2', '*', 'swap', -1, '+', 'swap', 'fact']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
        'if-then': {'arity': 2, 'pl':[]},
@@ -34,8 +35,9 @@ facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
 #program_list = [9, 7, 'swap']
 #program_list = [1,2,3, 'dup']
+#program_list = [1,2,3, 'dup2']
 #program_list = [9, 7, 'swap', 'dup']
-program_list = [4, 'fact']
+program_list = [1, 4, 'fact']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then',]
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
@@ -134,9 +136,13 @@ def run(pl, vs, fun):
                     pl.insert(0, else_block)
             continue
 
-        
         if next == 'dup':
             vs.append(vs[-1])
+            continue
+
+        if next == 'dup2':
+            vs.append(vs[-2])
+            vs.append(vs[-2])
             continue
         
         if next == 'swap':
