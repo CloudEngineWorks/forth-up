@@ -29,8 +29,11 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'count-up_aux': {'arity': 2, 'pl':['>R', 'dup', 1, '+', 'R>', 'count-up']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
+       'repeat': {'arity': 2, 'pl':[]},
        'assert': {'arity': 2, 'pl':['eq', 'assertion true', 'assertion false', 'if-then-else']},
-       'assert-n': {'arity': 2, 'pl':['dup', '>Q', 'eq', 'Q>', 'drop', '1--assert', 'assertion false', 'if-then-else']},
+       'assert-n': {'arity': 2, 'pl':['dup', '>R', '0--assert-n-load', 'if-then', '0--assert-n-unload', 'if-then', 'R>', 'drop']},
+       'assert-n-load': {'arity': 2, 'pl':['dup', '>R', '0--assert', 'if-then', 'R>', 'drop']},
+       'assert-n-unload': {'arity': 2, 'pl':['dup', '>R', '0--assert', 'if-then', 'R>', 'drop']},
        'if-then': {'arity': 2, 'pl':[]},
        'if-then-else': {'arity': 3, 'pl':[]},
        'timeOut': {'arity': 2, 'pl':[]},
@@ -53,7 +56,8 @@ facts = {}
 #program_list = [4, 'count-down']
 #program_list = [1, 4, 'count-up']
 #program_list = [1, '>R', 'R>', 1, 'assert']
-program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then', 'yes', 4, 'assert-n']
+program_list = [1, 2, 1, 2, 2, 'assert-n']
+#program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
 #program_list = [1, 0, 1, '1--inverse', 'if-then-else']
@@ -79,7 +83,6 @@ def isTrue(e):
 def isValue(e, fun):
     return (isinstance(e, int) or isinstance(e, float)
             or (isinstance(e, str) and not e in fun.keys())
-            #or (isinstance(e, str) and len(e) > 1 and e[0] == '*') # treat a *
             )
 
 def run(pl, vs, fun, rs, q):
@@ -95,21 +98,14 @@ def run(pl, vs, fun, rs, q):
         # if-then (conditional-exp funciton -- ) post-fix if-then (e.g. 1 n_args n_arity_function if-then)
         if next == 'if-then':
             then_block = vs.pop()
-            then_args = []
-            if isinstance(then_block, str) and then_block[1:3] == '--':
-                # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
-                then_arity = int(then_block[:1])
-                then_block = then_block[3:]
-                #print('then-block', then_block)
-                for i in range(0, then_arity):
-                    then_args.append(vs.pop())
+            (then_args, then_block) = getArgs(then_block, vs)
                 
             if len(vs) >= 1:
                 exp = vs.pop()
             else:
                 exp = False
             if isTrue(exp):
-                #print('if clause is True')
+                print('if clause is True')
                 vs.extend(then_args)
                 if isinstance(then_block, list):
                     pl = then_block.extend(pl)
@@ -119,25 +115,11 @@ def run(pl, vs, fun, rs, q):
         
         if next == 'if-then-else':
             else_block = vs.pop()
-            #print('else_block', else_block, else_block[1:3] == '--')
-            else_args = []
-            if isinstance(else_block, str) and else_block[1:3] == '--':
-                else_arity = int(else_block[:1])
-                else_block = else_block[3:]
-                #print('else_block', else_block)
-                for i in range(0, else_arity):
-                    else_args.append(vs.pop())
+            (else_args, else_block) = getArgs(else_block, vs)
             
             then_block = vs.pop()
-            then_args = []
-            if isinstance(then_block, str) and then_block[1:3] == '--':
-                # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
-                then_arity = int(then_block[:1])
-                then_block = then_block[3:]
-                #print('not a value', then_block)
-                for i in range(0, then_arity):
-                    then_args.append(vs.pop())
-                
+            (then_args, then_block) = getArgs(then_block, vs)
+            
             if len(vs) >= 1:
                 exp = vs.pop()
             else:
@@ -155,15 +137,31 @@ def run(pl, vs, fun, rs, q):
                 if isinstance(else_block, list):
                     pl = else_block.extend(pl)
                 else:
-                    #print('insert', else_block)
                     pl.insert(0, else_block)
             continue
-
+        
+        #if next == 'repeat':
+        #    repeat_block = vs.pop()
+        #    (repeat_args, repeat_block) = getArgs(repeat_block, vs)
+        #    if len(vs) >= 1:
+        #        count = vs.pop()
+        #    else:
+        #        count = 0
+        #    for n in range(0, count):
+        #        print('repeat...')
+        #        vs.extend(repeat_args)
+        #        if isinstance(repeat_block, list):
+        #            pl = repeat_block.extend(pl)
+        #        else:
+        #            pl.insert(0, repeat_block)
+        #    continue
+        
+        
         if next == '>R':
             v = vs.pop()
             rs.append(v)
             continue
-
+        
         if next == 'R>':
             v = rs.pop()
             vs.append(v)
@@ -245,6 +243,18 @@ def run(pl, vs, fun, rs, q):
             pl = fun[next]['pl'] + pl
             continue
         
+
+def getArgs(block, vs):
+    args = []
+    if isinstance(block, str) and block[1:3] == '--':
+        # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
+        arity = int(block[:1])
+        block = block[3:]
+        print('block', block)
+        for i in range(0, arity):
+            args.append(vs.pop())
+    print('args', args, 'block', block )
+    return (args, block)
             
 print('so far so good... ready to run')
 run(program_list, param_stack, fundi, return_stack, return_queue)
