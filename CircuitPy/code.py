@@ -29,14 +29,19 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'count-up_aux': {'arity': 2, 'pl':['>R', 'dup', 1, '+', 'R>', 'count-up']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
+       'assert': {'arity': 2, 'pl':['eq', 'assertion true', 'assertion false', 'if-then-else']},
+       'assert-n': {'arity': 2, 'pl':['dup', '>Q', 'eq', 'Q>', 'drop', '1--assert', 'assertion false', 'if-then-else']},
        'if-then': {'arity': 2, 'pl':[]},
        'if-then-else': {'arity': 3, 'pl':[]},
        'timeOut': {'arity': 2, 'pl':[]},
        'dup': {'arity': 1, 'pl':[]},
        'swap': {'arity': 2, 'pl':[]},
        'drop': {'arity': 2, 'pl':[]},
+       'eq': {'arity': 2, 'pl':[]},
        '>R': {'arity': 1, 'pl':[]},
-       'R>': {'arity': 0, 'pl':[]}
+       'R>': {'arity': 0, 'pl':[]},
+       '>Q': {'arity': 1, 'pl':[]},
+       'Q>': {'arity': 0, 'pl':[]}
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
@@ -46,9 +51,9 @@ facts = {}
 #program_list = [9, 7, 'swap', 'dup']
 #program_list = [1, 4, 'fact']
 #program_list = [4, 'count-down']
-program_list = [1, 4, 'count-up']
-#program_list = [1, '>R', 'R>']
-#program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then',]
+#program_list = [1, 4, 'count-up']
+#program_list = [1, '>R', 'R>', 1, 'assert']
+program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then', 'yes', 4, 'assert-n']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
 #program_list = [1, 0, 1, '1--inverse', 'if-then-else']
@@ -63,6 +68,7 @@ program_list = [1, 4, 'count-up']
 # :fact dup 1 * swap -1 + swap fact;
 param_stack = []
 return_stack = []
+return_queue = []
 
 def isTrue(e):
     #print('isTrue', e, (e != 0 and e != False and e != 'False'))
@@ -76,7 +82,7 @@ def isValue(e, fun):
             #or (isinstance(e, str) and len(e) > 1 and e[0] == '*') # treat a *
             )
 
-def run(pl, vs, fun, rs):
+def run(pl, vs, fun, rs, q):
     print(pl)
     while len(pl) > 0: # and not isValue(pl[-1]):
         next = pl[0];
@@ -162,6 +168,22 @@ def run(pl, vs, fun, rs):
             v = rs.pop()
             vs.append(v)
             continue
+        
+        if next == '>Q':
+            v = vs.pop()
+            q.insert(0, v)
+            continue
+
+        if next == 'Q>':
+            v = q.pop()
+            vs.append(v)
+            continue
+        
+        if next == 'eq':
+            v1 = vs.pop()
+            v2 = vs.pop()
+            vs.append(v1 == v2)
+            continue
 
         if next == 'dup':
             vs.append(vs[-1])
@@ -225,7 +247,7 @@ def run(pl, vs, fun, rs):
         
             
 print('so far so good... ready to run')
-run(program_list, param_stack, fundi, return_stack)
+run(program_list, param_stack, fundi, return_stack, return_queue)
 print(param_stack)
 #while True: #loop forever
 #    rs = read_rotor()
