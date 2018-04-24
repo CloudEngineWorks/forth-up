@@ -25,8 +25,8 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'fact_aux': {'arity': 2, 'pl':['dup2', '*', 'swap', -1, '+', 'swap', 'fact']},
        'count-down': {'arity': 1, 'pl':['dup', -1, '+', '0--count-down_aux', 'if-then']},
        'count-down_aux': {'arity': 2, 'pl':['dup', -1, '+', 'count-down']},
-       'count-up': {'arity': 2,     'pl':['dup2', 'inverse', '+', '0--count-up_aux', 'if-then']},
-       'count-up_aux': {'arity': 2, 'pl':['swap', 'dup', 1, '+', 'swap']},
+       'count-up': {'arity': 2,     'pl':['dup2', 'inverse', '+', '0--count-up_aux', '0--drop', 'if-then-else']},
+       'count-up_aux': {'arity': 2, 'pl':['>R', 'dup', 1, '+', 'R>', 'count-up']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
        'if-then': {'arity': 2, 'pl':[]},
@@ -34,7 +34,9 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'timeOut': {'arity': 2, 'pl':[]},
        'dup': {'arity': 1, 'pl':[]},
        'swap': {'arity': 2, 'pl':[]},
-       'drop': {'arity': 2, 'pl':[]}
+       'drop': {'arity': 2, 'pl':[]},
+       '>R': {'arity': 1, 'pl':[]},
+       'R>': {'arity': 0, 'pl':[]}
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
@@ -45,6 +47,7 @@ facts = {}
 #program_list = [1, 4, 'fact']
 #program_list = [4, 'count-down']
 program_list = [1, 4, 'count-up']
+#program_list = [1, '>R', 'R>']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then',]
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
@@ -58,7 +61,8 @@ program_list = [1, 4, 'count-up']
 # 4 fact
 # 1 2 * 3 * 4 *
 # :fact dup 1 * swap -1 + swap fact;
-value_stack = []
+param_stack = []
+return_stack = []
 
 def isTrue(e):
     #print('isTrue', e, (e != 0 and e != False and e != 'False'))
@@ -72,7 +76,7 @@ def isValue(e, fun):
             #or (isinstance(e, str) and len(e) > 1 and e[0] == '*') # treat a *
             )
 
-def run(pl, vs, fun):
+def run(pl, vs, fun, rs):
     print(pl)
     while len(pl) > 0: # and not isValue(pl[-1]):
         next = pl[0];
@@ -90,7 +94,7 @@ def run(pl, vs, fun):
                 # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
                 then_arity = int(then_block[:1])
                 then_block = then_block[3:]
-                print('then-block', then_block)
+                #print('then-block', then_block)
                 for i in range(0, then_arity):
                     then_args.append(vs.pop())
                 
@@ -99,7 +103,7 @@ def run(pl, vs, fun):
             else:
                 exp = False
             if isTrue(exp):
-                print('if clause is True')
+                #print('if clause is True')
                 vs.extend(then_args)
                 if isinstance(then_block, list):
                     pl = then_block.extend(pl)
@@ -145,8 +149,18 @@ def run(pl, vs, fun):
                 if isinstance(else_block, list):
                     pl = else_block.extend(pl)
                 else:
-                    print('insert', else_block)
+                    #print('insert', else_block)
                     pl.insert(0, else_block)
+            continue
+
+        if next == '>R':
+            v = vs.pop()
+            rs.append(v)
+            continue
+
+        if next == 'R>':
+            v = rs.pop()
+            vs.append(v)
             continue
 
         if next == 'dup':
@@ -202,7 +216,7 @@ def run(pl, vs, fun):
             continue
         
         if next in fun.keys():
-            print('apply function', next, 'arity', fun[next]['arity'], fun[next]['pl'], 'to', pl)
+            #print('apply function', next, 'arity', fun[next]['arity'], fun[next]['pl'], 'to', pl)
             #vs.extend(fun[next]['pl'][:-1])
             #pl.insert(0, fun[next]['pl'][-1])
             ##pl.extend(fun[next]['pl'])
@@ -211,8 +225,8 @@ def run(pl, vs, fun):
         
             
 print('so far so good... ready to run')
-run(program_list, value_stack, fundi)
-print(value_stack)
+run(program_list, param_stack, fundi, return_stack)
+print(param_stack)
 #while True: #loop forever
 #    rs = read_rotor()
 #    if rs == 1 or rs == -1:
