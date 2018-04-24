@@ -5,10 +5,10 @@ from digitalio import DigitalInOut, Direction, Pull
 import time
 # import random
 # Digital input with pullup
-red = DigitalInOut(board.D1)
+red = DigitalInOut(board.D13)
 red.direction = Direction.OUTPUT
-green = DigitalInOut(board.D2)
-green.direction = Direction.OUTPUT
+#green = DigitalInOut(board.D2)
+#green.direction = Direction.OUTPUT
 
 
 fundi = {'rotary':{'arity': 1, 'pl':['.green', '.red', '3if']},
@@ -19,7 +19,8 @@ fundi = {'rotary':{'arity': 1, 'pl':['.green', '.red', '3if']},
        'green': {'arity': 1, 'pl':['.abs', 'greenLED']},
        'redLED': {'arity': 1, 'pl':[]},
        'greenLED': {'arity': 1, 'pl':[]},
-       'fact': {'arity': 1, 'pl':[]},
+       'fact': {'arity': 1, 'pl':[ '0--fact_aux', 'if-then']},
+       'fact_aux': {'arity': 2, 'pl':['dup', 1, '*', 'swap', -1, '+', 'swap', 'fact']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
        'if-then': {'arity': 2, 'pl':[]},
@@ -31,10 +32,10 @@ fundi = {'rotary':{'arity': 1, 'pl':['.green', '.red', '3if']},
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
 #program_list = [1, 'redLED', 1, 'greenLED']
-#program_list = [ 1, 'redLED', 1.5, 0, '*redLED', 'timeOut']
-#program_list = [ 1, 'redLED', 1, 0, '*redLED', 'if-then', 1, 1, '*redLED', 'if-then']
-#program_list = [ 0, 'redLED', 1, 1, '*redLED', 'if-then']
-program_list = [ 0, 1, '*greenLED', 1, '*redLED', 'if-then-else']
+#program_list = [ 1, 'redLED', 1.5, 0, '1--redLED', 'timeOut']
+#program_list = [ 1, 'redLED', 1, 0, '1--redLED', 'if-then', 1, 1, '*redLED', 'if-then']
+#program_list = [ 0, 'redLED', 1, 1, '1--redLED', 'if-then']
+program_list = [ 1, 0, '1--redLED', 1, '1--redLED', 'if-then-else']
 # recursive example
 # 4 fact
 # 1 2 * 3 * 4 *
@@ -138,10 +139,10 @@ def run(pl, vs, fun):
             red.value = isTrue(val)
             continue
         
-        if next == 'greenLED':
-            val = vs.pop()
-            green.value = isTrue(val)
-            continue
+#        if next == 'greenLED':
+#            val = vs.pop()
+#            green.value = isTrue(val)
+#            continue
         
         if len(next) > 2 and next[0] == '*': # and next[1]isalpha():
             vs.push(next[1:])
