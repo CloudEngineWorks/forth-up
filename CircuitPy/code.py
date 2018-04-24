@@ -11,8 +11,8 @@ red.direction = Direction.OUTPUT
 #green.direction = Direction.OUTPUT
 
 
-fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', '3if']},
-       'abs': {'arity': 1, 'pl':['0--noop', '0--inverse', '2if']},
+fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
+       'abs': {'arity': 1, 'pl':['0--noop', '0--inverse', 'if-then']},
        'inverse': {'arity': 1, 'pl':[-1, '*']},
        'not': {'arity': 1, 'pl':[0, 1, 'if-then-else']},
        'noop': {'arity': 0, 'pl':[]},
@@ -20,8 +20,8 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', '3if']},
        'green': {'arity': 1, 'pl':['.abs', 'greenLED']},
        'redLED': {'arity': 1, 'pl':[]},
        'greenLED': {'arity': 1, 'pl':[]},
-       'fact': {'arity': 1, 'pl':[ '0--fact_aux', 'if-then']},
-       'fact_aux': {'arity': 2, 'pl':['dup', 1, '*', 'swap', -1, '+', 'swap', 'fact']},
+       'fact': {'arity': 1, 'pl':['dup', '0--fact_aux', 'if-then']},
+       'fact_aux': {'arity': 2, 'pl':['dup', '*', 'swap', -1, '+', 'swap']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
        'if-then': {'arity': 2, 'pl':[]},
@@ -32,7 +32,11 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', '3if']},
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
-program_list = [9, 7, 'swap']
+#program_list = [9, 7, 'swap']
+#program_list = [1,2,3, 'dup']
+#program_list = [9, 7, 'swap', 'dup']
+program_list = [4, 'fact']
+#program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then',]
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
 #program_list = [1, 0, 1, '1--inverse', 'if-then-else']
@@ -48,7 +52,8 @@ program_list = [9, 7, 'swap']
 value_stack = []
 
 def isTrue(e):
-    if e == '1' or e == 'True' or e == 1:
+    #print('isTrue', e, (e != 0 and e != False and e != 'False'))
+    if e != 0 and e != False and e != 'False':
         return True
     return False
 
@@ -76,13 +81,13 @@ def run(pl, vs, fun):
                 # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
                 then_arity = int(then_block[:1])
                 then_block = then_block[3:]
-                #print('not a value', then_block)
+                print('then-block', then_block)
                 for i in range(0, then_arity):
                     then_args.append(vs.pop())
                 
             exp = vs.pop()
             if isTrue(exp):
-                #print('if clause is True')
+                print('if clause is True')
                 vs.extend(then_args)
                 if isinstance(then_block, list):
                     pl = then_block.extend(pl)
@@ -131,14 +136,14 @@ def run(pl, vs, fun):
 
         
         if next == 'dup':
-            vs.append(vs[0])
+            vs.append(vs[-1])
             continue
         
         if next == 'swap':
             lhs = vs.pop()
             rhs = vs.pop()
-            vs.append(rhs)
             vs.append(lhs)
+            vs.append(rhs)
             continue
         
         if next == '*':
@@ -174,8 +179,9 @@ def run(pl, vs, fun):
             continue
         
         if next in fun.keys():
-            vs.extend(fun[next]['pl'][:-1])
-            pl.insert(0, fun[next]['pl'][-1])
+            #vs.extend(fun[next]['pl'][:-1])
+            #pl.insert(0, fun[next]['pl'][-1])
+            pl.extend(fun[next]['pl'])
             continue
         
             
