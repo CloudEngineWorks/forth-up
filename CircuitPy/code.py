@@ -33,10 +33,11 @@ fundi = {'rotary':['0--green', '0--red', 'if-then-else'],
        '+': [],
        '*': [],
        'repeat': [],
-       'assert': ['eq', 'assertion true', 'assertion false', 'if-then-else'],
-       'assert-n': ['n>R', '0--assert-n-load', 'if-then', '0--assert-n-unload', 'if-then', '<R', 'drop'],
-       'assert-n-comp': ['>R', '0--assert', 'if-then', '<R', 'drop'],
-       'assert-n-unload': ['dup', '>R', '0--assert', 'if-then', '<R', 'drop'],
+       'assert': ['eq', 'True', '1-->A', 'False', '1-->A', 'if-then-else'],
+       'assert-n': ['dup', '>R', 'n>Q', 'assert-n-2'],
+       'assert-n-2': ['dup', '>R', '0--assert-n_aux', 'if-then', '<R', -1, '+'],
+       'assert-n_aux': ['Q>', 'assert', '<R', -1, '+',  'assert-n-2'],
+       'x_assert-n-unload': ['dup', '>R', '0--assert', 'if-then', '<R', 'drop'],
        'if-then': [],
        'if-then-else': [],
        'timeOut': [],
@@ -45,13 +46,14 @@ fundi = {'rotary':['0--green', '0--red', 'if-then-else'],
        'drop': [],
        'eq': [],
        '>R': [],
+       '>A': [],
        'n>R': ['dup','>Q', '0--n>R_aux', 'if-then'],
-       'n>R_aux': ['>R', 'Q>',  -1, '+', 'n>R'],
+       'n>R_aux': ['>R', 'Q>', -1, '+', 'n>R'],
        '<R': [],
        'n<R': [],
        '>Q': [],
-       'n>Q': ['dup','>R', '0--n>Q_aux', 'if-then'],
-       'n>Q_aux': ['>Q', '<R',  -1, '+', 'n>Q'],
+       'n>Q': ['dup', '>R', '0--n>Q_aux', 'if-then'],
+       'n>Q_aux': ['>Q', '<R', -1, '+', 'n>Q'],
        'Q>': []
        }
 facts = {}
@@ -63,11 +65,13 @@ facts = {}
 #program_list = [1, 4, 'fact']
 #program_list = [4, 'count-down']
 #program_list = [1, 4, 'count-up']
-#program_list = [1, '>R', '<R', 1, 'assert']
-#program_list = [1, 2, 1, 2, 2, 'assert-n']
+#program_list = [1, '>R', 'noop', '<R', 1, 'assert']
+#program_list = [5, '>Q', 'noop', 'Q>', 5, 'assert']
+#program_list = [7, 9, 7, 9, 2, 'assert-n']
 #program_list = [1, 2, 5, 2, 'n>R', '<R', '<R']
 #program_list = [1, 2, 5, '>Q', '>Q', 'Q>', 'Q>']
-program_list = [1, 2, 5, 2, 'n>Q', 'Q>', 'Q>']
+#program_list = [1, 3, 5, 2, 'n>Q', 'Q>', 'Q>', 3, 'assert', 5, 'assert', 1, 'assert']
+program_list = [1, 3, 5, 8, 3, 'n>Q', 'Q>', 'Q>', 'Q>', 3, 'assert', 5, 'assert', 8, 'assert', 1, 'assert']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
@@ -84,6 +88,7 @@ program_list = [1, 2, 5, 2, 'n>Q', 'Q>', 'Q>']
 param_stack = []
 return_stack = []
 return_queue = []
+assertions = []
 
 def isTrue(e):
     #print('isTrue', e, (e != 0 and e != False and e != 'False'))
@@ -97,15 +102,16 @@ def isValue(e, fun):
             )
 
 def run(pl, vs, fun, rs, q):
+    global assertions
     print(pl)
     while len(pl) > 0: # and not isValue(pl[-1]):
         next = pl[0];
         pl = pl[1:]
-        print(vs, next)
+        #print(vs, next, 'R:', rs, 'Q:', q)
         if isValue(next, fun):
             vs.append(next)
             continue
-
+            
         if next == 'if-then':
             then_block = vs.pop()
             (then_args, then_block) = getArgs(then_block, vs)
@@ -115,14 +121,14 @@ def run(pl, vs, fun, rs, q):
             else:
                 exp = False
             if isTrue(exp):
-                print('if clause is True')
+                #print('if clause is True')
                 vs.extend(then_args)
                 if isinstance(then_block, list):
                     pl = then_block.extend(pl)
                 else:
                     pl.insert(0, then_block)
             continue
-        
+            
         if next == 'if-then-else':
             else_block = vs.pop()
             (else_args, else_block) = getArgs(else_block, vs)
@@ -149,70 +155,58 @@ def run(pl, vs, fun, rs, q):
                 else:
                     pl.insert(0, else_block)
             continue
-        
-        #if next == 'repeat':
-        #    repeat_block = vs.pop()
-        #    (repeat_args, repeat_block) = getArgs(repeat_block, vs)
-        #    if len(vs) >= 1:
-        #        count = vs.pop()
-        #    else:
-        #        count = 0
-        #    for n in range(0, count):
-        #        print('repeat...')
-        #        vs.extend(repeat_args)
-        #        if isinstance(repeat_block, list):
-        #            pl = repeat_block.extend(pl)
-        #        else:
-        #            pl.insert(0, repeat_block)
-        #    continue
-        
-        
+            
+        if next == '>A':
+            v = vs.pop()
+            assertions.append(v)
+            continue
+            
         if next == '>R':
             v = vs.pop()
             rs.append(v)
             continue
-        
+            
         if next == '<R':
             v = rs.pop()
             vs.append(v)
             continue
-        
+            
         if next == '>Q':
             v = vs.pop()
             q.insert(0, v)
             continue
-
+            
         if next == 'Q>':
             v = q.pop()
             vs.append(v)
             continue
-        
+            
         if next == 'eq':
             v1 = vs.pop()
             v2 = vs.pop()
             vs.append(v1 == v2)
             continue
-
+            
         if next == 'dup':
             vs.append(vs[-1])
             continue
-
+            
         if next == 'dup2':
             vs.append(vs[-2])
             vs.append(vs[-2])
             continue
-        
+            
         if next == 'swap':
             lhs = vs.pop()
             rhs = vs.pop()
             vs.append(lhs)
             vs.append(rhs)
             continue
-
+            
         if next == 'drop':
             vs.pop()
             continue
-        
+            
         if next == '*':
             if len(vs) < 2:
                 print('Error: function '++ next ++ ' has insufficient arguments.')
@@ -221,7 +215,7 @@ def run(pl, vs, fun, rs, q):
             rhs = vs.pop()
             vs.append(lhs * rhs)
             continue
-        
+            
         if next == '+':
             if len(vs) < 2:
                 print('Error: function '++ next ++ ' has insufficient arguments.')
@@ -230,25 +224,26 @@ def run(pl, vs, fun, rs, q):
             rhs = vs.pop()
             vs.append(lhs + rhs)
             continue
-        
+            
         if next == 'redLED':
             val = vs.pop()
             red.value = isTrue(val)
             continue
-        
+            
 #        if next == 'greenLED':
 #            val = vs.pop()
 #            green.value = isTrue(val)
 #            continue
-        
-        if len(next) > 2 and next[0] == '*': # and next[1]isalpha():
-            vs.push(next[1:])
-            continue
+            
+        ##if len(next) > 2 and next[0] == '*': # and next[1]isalpha():
+        ##    vs.push(next[1:])
+        ##    continue
         
         if next in fun.keys():
+            print(vs, next, 'R:', rs, 'Q:', q)
             pl = fun[next] + pl
             continue
-        
+
 
 def getArgs(block, vs):
     args = []
@@ -256,15 +251,16 @@ def getArgs(block, vs):
         # eg. 3--my-fn will consume 3 arguments and the name of the function is 'my-fn'
         arity = int(block[:1])
         block = block[3:]
-        print('block', block)
+        #print('block', block)
         for i in range(0, arity):
             args.append(vs.pop())
-    print('args', args, 'block', block )
+    #print('args', args, 'block', block )
     return (args, block)
-            
+    
 print('so far so good... ready to run')
 run(program_list, param_stack, fundi, return_stack, return_queue)
-print(param_stack)
+print(param_stack, 'R:', return_stack, 'Q:', return_queue, 'A:', assertions)
+
 #while True: #loop forever
 #    rs = read_rotor()
 #    if rs == 1 or rs == -1:
