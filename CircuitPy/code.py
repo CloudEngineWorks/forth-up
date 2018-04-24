@@ -45,11 +45,13 @@ fundi = {'rotary':['0--green', '0--red', 'if-then-else'],
        'drop': [],
        'eq': [],
        '>R': [],
-       'n>R': ['dup','>Q', '0--rq-repeat', 'if-then'],
-       'rq-repeat': ['>R', 'Q>',  -1, '+', 'n>R'],
+       'n>R': ['dup','>Q', '0--n>R_aux', 'if-then'],
+       'n>R_aux': ['>R', 'Q>',  -1, '+', 'n>R'],
        '<R': [],
        'n<R': [],
        '>Q': [],
+       'n>Q': ['dup','>R', '0--n>Q_aux', 'if-then'],
+       'n>Q_aux': ['>Q', '<R',  -1, '+', 'n>Q'],
        'Q>': []
        }
 facts = {}
@@ -64,7 +66,8 @@ facts = {}
 #program_list = [1, '>R', '<R', 1, 'assert']
 #program_list = [1, 2, 1, 2, 2, 'assert-n']
 #program_list = [1, 2, 5, 2, 'n>R', '<R', '<R']
-program_list = [1, 2, 5, '>Q', '>Q', 'Q>', 'Q>']
+#program_list = [1, 2, 5, '>Q', '>Q', 'Q>', 'Q>']
+program_list = [1, 2, 5, 2, 'n>Q', 'Q>', 'Q>']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
