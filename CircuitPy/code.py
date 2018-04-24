@@ -23,13 +23,18 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', 'if-then-else']},
        'dup2': {'arity': 2, 'pl':[]},
        'fact': {'arity': 1, 'pl':['dup', '0--fact_aux', 'if-then']},
        'fact_aux': {'arity': 2, 'pl':['dup2', '*', 'swap', -1, '+', 'swap', 'fact']},
+       'count-down': {'arity': 1, 'pl':['dup', -1, '+', '0--count-down_aux', 'if-then']},
+       'count-down_aux': {'arity': 2, 'pl':['dup', -1, '+', 'count-down']},
+       'count-up': {'arity': 2,     'pl':['dup2', 'inverse', '+', '0--count-up_aux', 'if-then']},
+       'count-up_aux': {'arity': 2, 'pl':['swap', 'dup', 1, '+', 'swap']},
        '+': {'arity': 2, 'pl':[]},
        '*': {'arity': 2, 'pl':[]},
        'if-then': {'arity': 2, 'pl':[]},
        'if-then-else': {'arity': 3, 'pl':[]},
        'timeOut': {'arity': 2, 'pl':[]},
        'dup': {'arity': 1, 'pl':[]},
-       'swap': {'arity': 2, 'pl':[]}
+       'swap': {'arity': 2, 'pl':[]},
+       'drop': {'arity': 2, 'pl':[]}
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
@@ -37,7 +42,9 @@ facts = {}
 #program_list = [1,2,3, 'dup']
 #program_list = [1,2,3, 'dup2']
 #program_list = [9, 7, 'swap', 'dup']
-program_list = [1, 4, 'fact']
+#program_list = [1, 4, 'fact']
+#program_list = [4, 'count-down']
+program_list = [1, 4, 'count-up']
 #program_list = [ 4, 'yes', 'if-then', 1, 'yes', 'if-then', 0, 'no', 'yes', 'if-then-else', -1, 'yes', 'if-then',]
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
 #program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
@@ -75,7 +82,7 @@ def run(pl, vs, fun):
             vs.append(next)
             continue
 
-        # if-then (a b -- ) post-fix if-then (e.g. 1 n_args n_arity_function if-then)
+        # if-then (conditional-exp funciton -- ) post-fix if-then (e.g. 1 n_args n_arity_function if-then)
         if next == 'if-then':
             then_block = vs.pop()
             then_args = []
@@ -87,7 +94,10 @@ def run(pl, vs, fun):
                 for i in range(0, then_arity):
                     then_args.append(vs.pop())
                 
-            exp = vs.pop()
+            if len(vs) >= 1:
+                exp = vs.pop()
+            else:
+                exp = False
             if isTrue(exp):
                 print('if clause is True')
                 vs.extend(then_args)
@@ -118,7 +128,10 @@ def run(pl, vs, fun):
                 for i in range(0, then_arity):
                     then_args.append(vs.pop())
                 
-            exp = vs.pop()
+            if len(vs) >= 1:
+                exp = vs.pop()
+            else:
+                exp = False
             if isTrue(exp):
                 #print('if clause is True')
                 vs.extend(then_args)
@@ -150,6 +163,10 @@ def run(pl, vs, fun):
             rhs = vs.pop()
             vs.append(lhs)
             vs.append(rhs)
+            continue
+
+        if next == 'drop':
+            vs.pop()
             continue
         
         if next == '*':
@@ -185,9 +202,11 @@ def run(pl, vs, fun):
             continue
         
         if next in fun.keys():
+            print('apply function', next, 'arity', fun[next]['arity'], fun[next]['pl'], 'to', pl)
             #vs.extend(fun[next]['pl'][:-1])
             #pl.insert(0, fun[next]['pl'][-1])
-            pl.extend(fun[next]['pl'])
+            ##pl.extend(fun[next]['pl'])
+            pl = fun[next]['pl'] + pl
             continue
         
             
