@@ -13,7 +13,7 @@ red.direction = Direction.OUTPUT
 
 fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', '3if']},
        'abs': {'arity': 1, 'pl':['0--noop', '0--inverse', '2if']},
-       'inverse': {'arity': 1, 'pl':['-1', '*']},
+       'inverse': {'arity': 1, 'pl':[-1, '*']},
        'not': {'arity': 1, 'pl':[0, 1, 'if-then-else']},
        'noop': {'arity': 0, 'pl':[]},
        'red': {'arity': 1, 'pl':['.abs', 'redLED']},
@@ -32,11 +32,13 @@ fundi = {'rotary':{'arity': 1, 'pl':['0--green', '0--red', '3if']},
        }
 facts = {}
 #program_list = [9, 7, '+', 2.5, '*']
+program_list = [9, 7, 'swap']
 #program_list = [0, 0, 1, 'if-then-else', 1, 'not']
-program_list = [0, 0, 1, '1--inverse', 'if-then-else', 1, 'not']
+#program_list = [1, 'inverse', 1.0, 'inverse', -3, 'inverse', -1.02, 'inverse']
+#program_list = [1, 0, 1, '1--inverse', 'if-then-else']
 #program_list = [1, 'redLED', 1, 'greenLED']
 #program_list = [1, 'redLED', 1.5, 0, '1--redLED', 'timeOut']
-#program_list = [ 1, 'redLED', 1, 0, '1--redLED', 'if-then', 1, 1, '*redLED', 'if-then']
+#program_list = [ 1, 'redLED', 1, 0, '1--redLED', 'if-then', 1, 1, '1--redLED', 'if-then']
 #program_list = [ 0, 'redLED', 1, 1, '1--redLED', 'if-then']
 #program_list = [ 1, 0, '1--redLED', 1, '1--redLED', 'if-then-else']
 # recursive example
@@ -68,11 +70,15 @@ def run(pl, vs, fun):
 
         # if-then (a b -- ) post-fix if-then (e.g. 1 n_args n_arity_function if-then)
         if next == 'if-then':
-            then_block = vs.pop()[1:]
-            arity = fun[then_block]['arity']
-            then_args = [5]
-            for i in range(0, arity):
-                then_args[i] = vs.pop()
+            then_block = vs.pop()
+            then_args = []
+            if isinstance(then_block, str) and then_block[1:3] == '--':
+                # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
+                then_arity = int(then_block[:1])
+                then_block = then_block[3:]
+                #print('not a value', then_block)
+                for i in range(0, then_arity):
+                    then_args.append(vs.pop())
                 
             exp = vs.pop()
             if isTrue(exp):
@@ -86,35 +92,35 @@ def run(pl, vs, fun):
         
         if next == 'if-then-else':
             else_block = vs.pop()
+            #print('else_block', else_block, else_block[1:3] == '--')
             else_args = []
-            if not isValue(else_block, fun):
-                print('not a value', else_block)
+            if isinstance(else_block, str) and else_block[1:3] == '--':
                 else_arity = int(else_block[:1])
                 else_block = else_block[3:]
-                #else_arity = fun[else_block]['arity']
+                #print('else_block', else_block)
                 for i in range(0, else_arity):
-                    else_args[i] = vs.pop()
+                    else_args.append(vs.pop())
             
             then_block = vs.pop()
             then_args = []
-            if not isValue(then_block, fun):
+            if isinstance(then_block, str) and then_block[1:3] == '--':
                 # eg. 3--my-fn is an arity of 3 and the function is 'my-fn'
                 then_arity = int(then_block[:1])
-                then_block = then_block[1:]
-                #then_arity = fun[then_block]['arity']
+                then_block = then_block[3:]
+                #print('not a value', then_block)
                 for i in range(0, then_arity):
-                    then_args[i] = vs.pop()
+                    then_args.append(vs.pop())
                 
             exp = vs.pop()
             if isTrue(exp):
-                print('if clause is True')
+                #print('if clause is True')
                 vs.extend(then_args)
                 if isinstance(then_block, list):
                     pl = then_block.extend(pl)
                 else:
                     pl.insert(0, then_block)
             else:
-                print('if clause is False')
+                #print('if clause is False')
                 vs.extend(else_args)
                 if isinstance(else_block, list):
                     pl = else_block.extend(pl)
@@ -125,7 +131,14 @@ def run(pl, vs, fun):
 
         
         if next == 'dup':
-            pl.append(pl[0])
+            vs.append(vs[0])
+            continue
+        
+        if next == 'swap':
+            lhs = vs.pop()
+            rhs = vs.pop()
+            vs.append(rhs)
+            vs.append(lhs)
             continue
         
         if next == '*':
@@ -166,7 +179,7 @@ def run(pl, vs, fun):
             continue
         
             
-print('so far so good...')
+print('so far so good... ready to run')
 run(program_list, value_stack, fundi)
 print(value_stack)
 #while True: #loop forever
