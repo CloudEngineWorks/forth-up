@@ -38,6 +38,7 @@ fundi = {'rotary': '0--green 0--red if-then-else',
        '*': '',
        '/': '',
        '%': '',
+       'A&': '',
        'repeat': '',
        'assert': '= True 1-->A False 1-->A if-then-else',
        'assert-n': 'dup >R n>Q assert-n-2',
@@ -124,11 +125,11 @@ def run(program_list, vs, fun):
     rs = []
     q = []
     pl = [ number_or_str(x) for x in program_list.split()]
-    print(pl)
+    print(program_list)
     while len(pl) > 0: # and not isValue(pl[-1]):
         next = pl[0];
         pl = pl[1:]
-        print(vs, next, 'R:', rs, 'Q:', q)
+        #print(vs, next, 'R:', rs, 'Q:', q)
         if isValue(next, fun):
             vs.append(next)
             continue
@@ -137,12 +138,12 @@ def run(program_list, vs, fun):
             then_block = vs.pop()
             (then_args, then_block) = getArgs(then_block, vs)
                 
-            if len(vs) >= 1:
-                exp = vs.pop()
-                print('stack exp', exp)
-            else:
-                print('stack empty')
-                exp = False
+#            if len(vs) >= 1:
+            exp = vs.pop()
+#                print('stack exp', exp)
+#            else:
+#                print('stack empty')
+#                exp = False
             if isTrue(exp):
                 #print('if clause is True')
                 vs.extend(then_args)
@@ -159,11 +160,11 @@ def run(program_list, vs, fun):
             then_block = vs.pop()
             (then_args, then_block) = getArgs(then_block, vs)
 
-            if len(vs) >= 1:
-                exp = vs.pop()
-            else:
-                print('stack empty')
-                exp = False
+#            if len(vs) >= 1:
+            exp = vs.pop()
+#            else:
+#                print('stack empty')
+#                exp = False
             if isTrue(exp):
                 #print('if clause is True')
                 vs.extend(then_args)
@@ -270,13 +271,13 @@ def run(program_list, vs, fun):
             vs.append(lhs * rhs)
             continue
             
-        if next == '&':
+        if next == 'A&':
 #            if len(vs) < 2:
 #                print('Error: function '++ next ++ ' has insufficient arguments.')
 #                break
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs and rhs)
+            lhs = bool(assertions.pop())
+            rhs = bool(assertions.pop())
+            assertions.append(lhs and rhs)
             continue
             
 #        if next == '/':
@@ -308,7 +309,7 @@ def run(program_list, vs, fun):
 #            continue
             
         if next in fun.keys():
-            print(vs, next, 'R:', rs, 'Q:', q)
+            #print(vs, next, 'R:', rs, 'Q:', q)
             next_list = [ number_or_str(x) for x in fun[next].split()]
             pl = next_list + pl
             continue
@@ -326,16 +327,19 @@ def getArgs(block, vs):
     #print('args', args, 'block', block )
     return (args, block)
     
-print('so far so good... ready to run')
+print('so far so good... ready to:')
 #run(program_list, param_stack, fundi)
 #print(param_stack, 'Assertions:', assertions)
 
 # tests
+print('  test')
 for pl in tests.test_suite:
     param_stack = []
     assertions = []
     run(pl, param_stack, fundi)
-    print(param_stack, 'Assertions:', assertions)
+    if assertions[0] != 'True' and assertions[0] != True:
+        print(param_stack, 'Assertions:', assertions)
+        print('---- Failed test for: ', pl)
 
 
 
