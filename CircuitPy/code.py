@@ -1,15 +1,15 @@
-import board
+#import board
 #import pulseio
 # from analogio import AnalogIn
-from digitalio import DigitalInOut, Direction, Pull
+#from digitalio import DigitalInOut, Direction, Pull
 # import time
 # import random
 
 import forthup_tests as tests
 
 # Digital input with pullup
-red = DigitalInOut(board.D13)
-red.direction = Direction.OUTPUT
+#red = DigitalInOut(board.D13)
+#red.direction = Direction.OUTPUT
 #green = DigitalInOut(board.D2)
 #green.direction = Direction.OUTPUT
 
@@ -42,7 +42,7 @@ fundi = {'rotary': '0--green 0--red if-then-else',
        'assert': '= True 1-->A False 1-->A if-then-else',
        'assert-n': 'dup >R n>Q assert-n-2',
        'assert-n-2': 'dup >R 0--assert-n_aux if-then <R -1 +',
-       'assert-n_aux': 'Q> assert <R -1 +  'assert-n-2',
+       'assert-n_aux': 'Q> assert <R -1 +  assert-n-2',
        'x_assert-n-unload': 'dup >R 0--assert if-then <R drop',
        'if-then': '',
        'if-then-else': '',
@@ -55,15 +55,11 @@ fundi = {'rotary': '0--green 0--red if-then-else',
        '<': '',
        '>R': '',
        '>A': '',
-       'n>R': 'dup','>Q 0--n>R_aux if-then',
-       'n>R_aux': '>R Q> -1 + n>R',
-       '<R': '',
-       'n<R': '',
+       'n>R': 'dup', '>Q': '0--n>R_aux if-then', 'n>R_aux': '>R Q> -1 + n>R', '<R': '', 'n<R': '',
        '>Q': '',
        'n>Q': 'dup >R 0--n>Q_aux if-then',
        'n>Q_aux': '>Q <R -1 + n>Q',
-       'Q>': ''
-       }
+       'Q>': ''}
 #facts = {}
 #program_list = '9 7 + 2.5 *'
 #program_list = '9 7 2.4 +'
@@ -117,6 +113,10 @@ def number_or_str(s):
         try:
             return float(s)
         except ValueError:
+            if s == 'True':
+                return 'True'
+            if s == 'False':
+                return 'False'
             return s
 
 def run(program_list, vs, fun):
@@ -155,10 +155,10 @@ def run(program_list, vs, fun):
         if next == 'if-then-else':
             else_block = vs.pop()
             (else_args, else_block) = getArgs(else_block, vs)
-            
+
             then_block = vs.pop()
             (then_args, then_block) = getArgs(then_block, vs)
-            
+
             if len(vs) >= 1:
                 exp = vs.pop()
             else:
@@ -244,54 +244,63 @@ def run(program_list, vs, fun):
             continue
             
         if next == '+':
-            if len(vs) < 2:
-                print('Error: function '++ next ++ ' has insufficient arguments.')
-                break
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
             lhs = vs.pop()
             rhs = vs.pop()
             vs.append(lhs + rhs)
             continue
             
         if next == '-':
-            if len(vs) < 2:
-                print('Error: function '++ next ++ ' has insufficient arguments.')
-                break
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
             lhs = vs.pop()
             rhs = vs.pop()
             vs.append(lhs - rhs)
             continue
             
         if next == '*':
-            if len(vs) < 2:
-                print('Error: function '++ next ++ ' has insufficient arguments.')
-                break
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
             lhs = vs.pop()
             rhs = vs.pop()
             vs.append(lhs * rhs)
             continue
             
-        if next == '/':
-            if len(vs) < 2:
-                print('Error: function '++ next ++ ' has insufficient arguments.')
-                break
+        if next == '&':
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
             lhs = vs.pop()
             rhs = vs.pop()
-            vs.append(lhs / rhs)
+            vs.append(lhs and rhs)
             continue
             
-        if next == '%':
-            if len(vs) < 2:
-                print('Error: function '++ next ++ ' has insufficient arguments.')
-                break
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs % rhs)
-            continue
+#        if next == '/':
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
+#            lhs = vs.pop()
+#            rhs = vs.pop()
+#            vs.append(lhs / rhs)
+#            continue
+#
+#        if next == '%':
+#            if len(vs) < 2:
+#                print('Error: function '++ next ++ ' has insufficient arguments.')
+#                break
+#            lhs = vs.pop()
+#            rhs = vs.pop()
+#            vs.append(lhs % rhs)
+#            continue
             
-        if next == 'redLED':
-            val = vs.pop()
-            red.value = isTrue(val)
-            continue
+#        if next == 'redLED':
+#            val = vs.pop()
+#            red.value = isTrue(val)
+#            continue
             
 #        if next == 'greenLED':
 #            val = vs.pop()
@@ -300,7 +309,8 @@ def run(program_list, vs, fun):
             
         if next in fun.keys():
             print(vs, next, 'R:', rs, 'Q:', q)
-            pl = fun[next] + pl
+            next_list = [ number_or_str(x) for x in fun[next].split()]
+            pl = next_list + pl
             continue
 
 
