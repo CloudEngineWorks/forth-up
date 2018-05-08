@@ -5,7 +5,8 @@
 # import time
 # import random
 
-import forthup_tests as tests
+import joyish_tests as testing
+from inspect import isfunction
 
 # Digital input with pullup
 #red = DigitalInOut(board.D13)
@@ -17,51 +18,81 @@ import forthup_tests as tests
 #       make parser for easy input (trivial to split on spaces)
 #       ui/repl
 
-fundi = {'rotary': '0--green 0--red if-then-else',
-       'abs': '0 < 0--inverse if-then',
-       'inverse': '-1 *',
-       'not': '0 1 if-then-else',
-       'noop': '',
-       'red': '.abs redLED',
-       'green': '.abs greenLED',
-       'redLED': '',
-       'greenLED': '',
-       'dup2': '',
-       'fact': 'dup 0--fact_aux if-then',
-       'fact_aux': 'dup2 * swap -1 + swap fact',
-       'count-down': 'dup -1 + 0--count-down_aux if-then',
-       'count-down_aux': 'dup -1 + count-down',
-       'count-up': 'dup2 inverse + 0--count-up_aux 0--drop if-then-else',
-       'count-up_aux': '>R dup 1 + <R count-up',
-       '+': '',
-       '-': '',
-       '*': '',
-       '/': '',
-       '%': '',
-       'A&': '',
-       'repeat': '',
-       'assert': '= True 1-->A False 1-->A if-then-else',
-       'assert-n': 'dup >R n>Q assert-n-2',
-       'assert-n-2': 'dup >R 0--assert-n_aux if-then <R -1 +',
-       'assert-n_aux': 'Q> assert <R -1 +  assert-n-2',
-       'x_assert-n-unload': 'dup >R 0--assert if-then <R drop',
-       'if-then': '',
-       'if-then-else': '',
-       'timeOut': '',
-       'dup': '',
-       'swap': '',
-       'drop': '',
-       '=': '',
-       '>': '',
-       '<': '',
-       '>R': '',
-       '>A': '',
-       'n>R': 'dup', '>Q': '0--n>R_aux if-then', 'n>R_aux': '>R Q> -1 + n>R', '<R': '', 'n<R': '',
-       '>Q': '',
-       'n>Q': 'dup >R 0--n>Q_aux if-then',
-       'n>Q_aux': '>Q <R -1 + n>Q',
-       'Q>': ''}
-#facts = {}
+def _dup(s, pl):
+    a = s.pop()
+    s.append(a)
+    s.append(a)
+    return [s, pl]
+def _add(s, pl):
+    a = s.pop()
+    b = s.pop()
+    s.append(a + b)
+    return [s, pl]
+def _sub(s, pl):
+    a = s.pop()
+    b = s.pop()
+    s.append(b - a)
+    return [s, pl]
+def _prod(s, pl):
+    a = s.pop()
+    b = s.pop()
+    s.append(a * b)
+    return [s, pl]
+def _n_prod(s, pl):
+    if s.length >= 2:
+        a = s.pop()
+        b = s.pop()
+        if isNumber(a) and isNumber(b):
+            s.append(a * b)
+            pl.insert(0, 'n*')
+            return [s, pl]
+        else:
+            s.append(b)
+            s.append(a)
+    return [s,];
+def _eq(s, pl):
+    a = s.pop()
+    b = s.pop()
+    s.append(a == b)
+    return [s, pl]
+def _ift(s, pl):
+    then_block = s.pop()
+    expression = s.pop()
+    if expression:
+        if isArray(then_block):
+            pl = then_block.concat(pl)
+        else:
+            pl.insert(0, then_block)
+    return [s, pl]
+def _ifte (s, pl):
+    else_block = s.pop()
+    then_block = s.pop()
+    expression = s.pop()
+    if expression:
+        if isArray(then_block):
+            pl = then_block.concat(pl)
+        else:
+            pl.insert(0, then_block)
+    else:
+        if isArray(else_block):
+            pl = else_block.concat(pl)
+        else:
+            pl.insert(0, else_block)
+    return [s, pl]
+
+
+words = {
+  'dup': _dup,
+  '+': _add,
+  '-': _sub,
+  '*': _prod,
+  'n*': _n_prod,
+  '==': _eq,
+  'if': _ift,
+  'if-else': _ifte,
+  'count-down': 'dup 1 - [ dup 1 - count-down ] if',
+  'fact': 'count-down n*'
+}
 #program_list = '9 7 + 2.5 *'
 #program_list = '9 7 2.4 +'
 #program_list = '9 7 swap'
@@ -87,7 +118,7 @@ fundi = {'rotary': '0--green 0--red if-then-else',
 #program_list = ' 1 redLED 1 0 1--redLED if-then 1 1 1--redLED if-then'
 #program_list = ' 0 redLED 1 1 1--redLED if-then'
 #program_list = ' 1 0 1--redLED 1 1--redLED if-then-else'
-program_list = '4 count-down * * *'
+#program_list = '4 count-down * * *'
 
 # recursive example
 # 4 fact
@@ -107,6 +138,9 @@ def isValue(e, fun):
     return (isinstance(e, int) or isinstance(e, float)
             or (isinstance(e, str) and not e in fun.keys()))
 
+def isArray(a):
+    return isinstance(a, (list,))
+
 def number_or_str(s):
     try:
         return int(s)
@@ -119,6 +153,16 @@ def number_or_str(s):
             if s == 'False':
                 return 'False'
             return s
+
+def cmpLists(a, b):
+    same = True
+    if len(a) == len(b):
+        for i in range(len(a)):
+            if a[i] != b[i]:
+                same = False
+    else:
+        same = False
+    return same
 
 def run(program_list, vs, fun):
     global assertions
@@ -133,212 +177,31 @@ def run(program_list, vs, fun):
         if isValue(next, fun):
             vs.append(next)
             continue
-            
-        if next == 'if-then':
-            then_block = vs.pop()
-            (then_args, then_block) = getArgs(then_block, vs)
-                
-#            if len(vs) >= 1:
-            exp = vs.pop()
-#                print('stack exp', exp)
-#            else:
-#                print('stack empty')
-#                exp = False
-            if isTrue(exp):
-                #print('if clause is True')
-                vs.extend(then_args)
-                if isinstance(then_block, list):
-                    pl = then_block.extend(pl)
-                else:
-                    pl.insert(0, then_block)
-            continue
-            
-        if next == 'if-then-else':
-            else_block = vs.pop()
-            (else_args, else_block) = getArgs(else_block, vs)
-
-            then_block = vs.pop()
-            (then_args, then_block) = getArgs(then_block, vs)
-
-#            if len(vs) >= 1:
-            exp = vs.pop()
-#            else:
-#                print('stack empty')
-#                exp = False
-            if isTrue(exp):
-                #print('if clause is True')
-                vs.extend(then_args)
-                if isinstance(then_block, list):
-                    pl = then_block.extend(pl)
-                else:
-                    pl.insert(0, then_block)
-            else:
-                #print('if clause is False')
-                vs.extend(else_args)
-                if isinstance(else_block, list):
-                    pl = else_block.extend(pl)
-                else:
-                    pl.insert(0, else_block)
-            continue
-            
-        if next == '=':
-            v1 = vs.pop()
-            v2 = vs.pop()
-            vs.append(v1 == v2)
-            continue
-            
-        if next == '>':
-            v1 = vs.pop()
-            v2 = vs.pop()
-            vs.append(v1 > v2)
-            continue
-            
-        if next == '<':
-            v1 = vs.pop()
-            v2 = vs.pop()
-            vs.append(v1 < v2)
-            continue
-            
-        if next == '>A':
-            v = vs.pop()
-            assertions.append(v)
-            continue
-            
-        if next == '>R':
-            v = vs.pop()
-            rs.append(v)
-            continue
-            
-        if next == '<R':
-            v = rs.pop()
-            vs.append(v)
-            continue
-            
-        if next == '>Q':
-            v = vs.pop()
-            q.insert(0, v)
-            continue
-            
-        if next == 'Q>':
-            v = q.pop()
-            vs.append(v)
-            continue
-            
-        if next == 'dup':
-            vs.append(vs[-1])
-            continue
-            
-        if next == 'dup2':
-            vs.append(vs[-2])
-            vs.append(vs[-2])
-            continue
-            
-        if next == 'swap':
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs)
-            vs.append(rhs)
-            continue
-            
-        if next == 'drop':
-            vs.pop()
-            continue
-            
-        if next == '+':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs + rhs)
-            continue
-            
-        if next == '-':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs - rhs)
-            continue
-            
-        if next == '*':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-            lhs = vs.pop()
-            rhs = vs.pop()
-            vs.append(lhs * rhs)
-            continue
-            
-        if next == 'A&':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-            lhs = bool(assertions.pop())
-            rhs = bool(assertions.pop())
-            assertions.append(lhs and rhs)
-            continue
-            
-#        if next == '/':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-#            lhs = vs.pop()
-#            rhs = vs.pop()
-#            vs.append(lhs / rhs)
-#            continue
-#
-#        if next == '%':
-#            if len(vs) < 2:
-#                print('Error: function '++ next ++ ' has insufficient arguments.')
-#                break
-#            lhs = vs.pop()
-#            rhs = vs.pop()
-#            vs.append(lhs % rhs)
-#            continue
-            
-#        if next == 'redLED':
-#            val = vs.pop()
-#            red.value = isTrue(val)
-#            continue
-            
-#        if next == 'greenLED':
-#            val = vs.pop()
-#            green.value = isTrue(val)
-#            continue
-            
+        
         if next in fun.keys():
             #print(vs, next, 'R:', rs, 'Q:', q)
-            next_list = [ number_or_str(x) for x in fun[next].split()]
-            pl = next_list + pl
+            if isfunction(fun[next]):
+                (vs, pl) = fun[next](vs, pl)
+            else:
+                next_list = [ number_or_str(x) for x in fun[next].split()]
+                pl = next_list + pl
             continue
+    return vs
 
 
-def getArgs(block, vs):
-    args = []
-    if isinstance(block, str) and block[1:3] == '--':
-        # eg. 3--my-fn will consume 3 arguments and the name of the function is 'my-fn'
-        arity = int(block[:1])
-        block = block[3:]
-        #print('block', block)
-        for i in range(0, arity):
-            args.append(vs.pop())
-    #print('args', args, 'block', block )
-    return (args, block)
-    
 print('so far so good... ready to:')
 #run(program_list, param_stack, fundi)
 #print(param_stack, 'Assertions:', assertions)
 
 # tests
-print('  test')
-for pl in tests.test_suite:
+print('Starting tests:')
+for test in testing.tests:
+    pl = test[0]
     param_stack = []
-    assertions = []
-    run(pl, param_stack, fundi)
-    if assertions[0] != 'True' and assertions[0] != True:
-        print(param_stack, 'Assertions:', assertions)
+    expected_stack = test[1]
+    result_stack = run(pl, param_stack, words)
+    if not cmpLists(result_stack, expected_stack):
+        print(param_stack, ' expected:', expected_stack)
         print('---- Failed test for: ', pl)
 
 
