@@ -188,11 +188,46 @@ def cmpLists(a, b):
         same = False
     return same
 
+def joinStrings(pl):
+    new_pl = []
+    terminal_char = ''
+    new_string = ''
+    for i in range(len(pl)):
+        word = pl[i]
+        if isinstance(word, str) and len(word) > 0:
+            if word[0] == '"' and terminal_char == '':
+                print('enter "string"')
+                new_string += word[1:]
+                terminal_char = '"'
+            elif word[0] == "'" and terminal_char == "":
+                print("enter 'string'")
+                new_string += word[1:]
+                terminal_char = "'"
+            elif word[len(word)-1] == '"' and terminal_char == '"':
+                new_string += ' ' + word[:-1]
+                terminal_char = ''
+            elif word[len(word)-1] == "'" and terminal_char == "'":
+                new_string += ' ' + word[:-1]
+                terminal_char = ""
+            elif terminal_char != '':
+                new_string += ' ' + word
+        elif terminal_char != '':
+            new_string += ' ' + str(word)
+                
+        if terminal_char == '' and new_string != '':
+            new_pl.append(new_string)
+            new_string = ''
+        elif terminal_char == '':
+            new_pl.append(word)
+    
+    return new_pl
+
 def run(program_list, vs, fun):
     global assertions
     rs = []
     q = []
     pl = [ number_or_str(x) for x in program_list.split()]
+    pl = joinStrings(pl)
     print(program_list)
     while len(pl) > 0: # and not isValue(pl[-1]):
         next = pl[0];
