@@ -39,7 +39,7 @@ def _prod(s, pl):
     s.append(a * b)
     return [s, pl]
 def _n_prod(s, pl):
-    if s.length >= 2:
+    if len(s) >= 2:
         a = s.pop()
         b = s.pop()
         if isNumber(a) and isNumber(b):
@@ -49,7 +49,7 @@ def _n_prod(s, pl):
         else:
             s.append(b)
             s.append(a)
-    return [s,];
+    return [s, pl];
 def _eq(s, pl):
     a = s.pop()
     b = s.pop()
@@ -60,7 +60,7 @@ def _ift(s, pl):
     expression = s.pop()
     if expression:
         if isArray(then_block):
-            pl = then_block.concat(pl)
+            pl = then_block+pl
         else:
             pl.insert(0, then_block)
     return [s, pl]
@@ -70,14 +70,31 @@ def _ifte (s, pl):
     expression = s.pop()
     if expression:
         if isArray(then_block):
-            pl = then_block.concat(pl)
+            print(then_block)
+            pl = then_block+pl
         else:
             pl.insert(0, then_block)
     else:
         if isArray(else_block):
-            pl = else_block.concat(pl)
+            pl = else_block+pl
         else:
             pl.insert(0, else_block)
+    return [s, pl]
+def _openList (s, pl):
+    thelist = []
+    next = pl[0];
+    pl = pl[1:]
+    nesting = 0
+    while ((len(pl) > 0 and next != ']') or nesting > 0):
+        thelist.append(next)
+        if next == '[':
+            nesting += 1
+        if next == ']':
+            nesting -= 1
+        next = pl[0];
+        pl = pl[1:]
+
+    pl.insert(0, thelist)
     return [s, pl]
 
 
@@ -90,6 +107,7 @@ words = {
   '==': _eq,
   'if': _ift,
   'if-else': _ifte,
+  '[': _openList,
   'count-down': 'dup 1 - [ dup 1 - count-down ] if',
   'fact': 'count-down n*'
 }
@@ -138,6 +156,9 @@ def isValue(e, fun):
     return (isinstance(e, int) or isinstance(e, float)
             or (isinstance(e, str) and not e in fun.keys()))
 
+def isNumber(e):
+    return isinstance(e, int) or isinstance(e, float)
+
 def isArray(a):
     return isinstance(a, (list,))
 
@@ -174,12 +195,12 @@ def run(program_list, vs, fun):
         next = pl[0];
         pl = pl[1:]
         #print(vs, next, 'R:', rs, 'Q:', q)
-        if isValue(next, fun):
+        if isValue(next, fun) or isArray(next):
             vs.append(next)
             continue
         
         if next in fun.keys():
-            #print(vs, next, 'R:', rs, 'Q:', q)
+            print(vs, next, pl)
             if isfunction(fun[next]):
                 (vs, pl) = fun[next](vs, pl)
             else:
