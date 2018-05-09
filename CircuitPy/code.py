@@ -6,8 +6,7 @@
 # import random
 
 import joyish_tests as testing
-from inspect import isfunction
-
+    
 # Digital input with pullup
 #red = DigitalInOut(board.D13)
 #red.direction = Direction.OUTPUT
@@ -161,6 +160,10 @@ def isNumber(e):
 
 def isArray(a):
     return isinstance(a, (list,))
+
+#from inspect import isfunction
+def isfunction(candidate):
+    return not (isinstance(candidate, str) or isinstance(candidate, (list,)))
 
 def number_or_str(s):
     try:
