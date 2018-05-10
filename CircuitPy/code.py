@@ -96,6 +96,44 @@ def _openList (s, pl):
     pl.insert(0, thelist)
     return [s, pl]
 
+def _openHash (s, pl):
+    hashString = ''
+    next = pl[0];
+    pl = pl[1:]
+    nesting = 0
+    while ((len(pl) > 0 and next != '}') or nesting > 0):
+        if isinstance(next, str) and next[-1] == ':':
+            next = '"'+next[:-1]+'":'
+        hashString += str(next)
+        if next == '{':
+            nesting += 1
+        if next == '}':
+            nesting -= 1
+        next = pl[0];
+        pl = pl[1:]
+
+    #dictionary = json.loads(hashString)
+    
+    hashString = '{'+hashString+'}'
+    print('Debug hashString '+ hashString)
+    import ast
+    dictionary = ast.literal_eval(hashString)
+    s.append(dictionary)
+    return [s, pl]
+def _get(s, l):
+    key = s.pop()
+    dictionary = s[-1]
+    s.append(dictionary[key])
+    return [s, l]
+def _swap(s, l):
+    a = s.pop()
+    b = s.pop()
+    s.append(a)
+    s.append(b)
+    return [s, l]
+def _drop(s, l):
+    a = s.pop()
+    return [s, l]
 
 words = {
   'dup': _dup,
@@ -107,6 +145,10 @@ words = {
   'if': _ift,
   'if-else': _ifte,
   '[': _openList,
+  '{': _openHash,
+  'get': _get,
+  'swap': _swap,
+  'drop': _drop,
   'count-down': 'dup 1 - [ dup 1 - count-down ] if',
   'fact': 'count-down n*'
 }
