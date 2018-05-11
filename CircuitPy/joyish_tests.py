@@ -16,7 +16,15 @@ tests = [
   ['"hello world" 1 2 3 4 n*', ["hello world", 24]],
   ['"hello world 5 o\'clock" 1 2 3 4 n*', ["hello world 5 o'clock", 24]],
   ["'hello world 5\" of rain' 4 count-down n*", ['hello world 5" of rain', 24]],
+  ["'hello world 5\" of rain' 4 count-down n* 'hello world 5\" of rain'", ['hello world 5" of rain', 24, 'hello world 5" of rain']],
+  ['"clock" 1 2 3 4 n*', ["clock", 24]],
   ['{ a: 2, b: 3 }', [{"a":2, "b":3}]],
   ['{ a: 2, b: 4 } a get swap b get swap drop', [2, 4]],
-  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]]
+  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
+  ["1 { a: 'hello world', b: 4 } a get swap b get swap drop", [1, 'hello world', 4]],
+  ['1 { a: "hello world", b: 4 } a get swap b get swap drop', [1, "hello world", 4]],
+  ["5 { a: 'hello', b: 'world' } a get swap b get swap drop", [5, 'hello', 'world']],
+  ['5 { a: "hello", b: "world" } a get swap b get swap drop', [5, "hello", "world"]],
+#  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
+#  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]]
 ]

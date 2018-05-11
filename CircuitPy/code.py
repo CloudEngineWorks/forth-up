@@ -104,6 +104,10 @@ def _openHash (s, pl):
     while ((len(pl) > 0 and next != '}') or nesting > 0):
         if isinstance(next, str) and next[-1] == ':':
             next = '"'+next[:-1]+'":'
+        elif isinstance(next, str) and next[0] != '"' and next[-1] == ',':
+            next = '"'+next+'",'
+        elif isinstance(next, str) and next[0] != '"' and next[-1] != ',':
+            next = '"'+next+'"'
         hashString += str(next)
         if next == '{':
             nesting += 1
@@ -179,15 +183,6 @@ words = {
 #program_list = ' 1 0 1--redLED 1 1--redLED if-then-else'
 #program_list = '4 count-down * * *'
 
-# recursive example
-# 4 fact
-# 1 2 * 3 * 4 *
-# :fact dup 1 * swap -1 + swap fact;
-param_stack = []
-return_stack = []
-return_queue = []
-assertions = []
-
 def isTrue(e):
     if e != 0 and e != False and e != 'False':
         return True
@@ -237,21 +232,36 @@ def joinStrings(pl):
     for i in range(len(pl)):
         word = pl[i]
         if isinstance(word, str) and len(word) > 0:
-            if word[0] == '"' and terminal_char == '':
+            if word[0] == '"' and word[len(word)-1] == '"' and terminal_char == '':
+                print('single word "string"')
+                new_string = word[1:-1]
+            elif word[0] == "'" and word[len(word)-1] == "'" and terminal_char == "":
+                print("single word 'string'")
+                new_string = word[1:-1]
+            elif word[0] == '"' and len(word) > 2 and word[-2:] == '",' and terminal_char == '':
+                print('single word "string",')
+                new_string = '"' + word[1:-2] + '",'
+            elif word[0] == "'" and len(word) > 2 and word[-2:] == "'," and terminal_char == "":
+                print("single word 'string',")
+                new_string = '"' + word[1:-2] + '",'
+            elif word[0] == '"' and terminal_char == '':
                 print('enter "string"')
-                new_string += word[1:]
+                new_string = word[1:]
                 terminal_char = '"'
             elif word[0] == "'" and terminal_char == "":
                 print("enter 'string'")
-                new_string += word[1:]
+                new_string = word[1:]
                 terminal_char = "'"
-            elif word[len(word)-1] == '"' and terminal_char == '"':
+            elif word[len(word)-1] == terminal_char:
+                print('exit "string"')
                 new_string += ' ' + word[:-1]
                 terminal_char = ''
-            elif word[len(word)-1] == "'" and terminal_char == "'":
-                new_string += ' ' + word[:-1]
-                terminal_char = ""
+            elif len(word) > 1 and word[-2:] == terminal_char + ',':
+                print('exit "string with",')
+                new_string = '"' + new_string + ' ' + word[:-2] + '",'
+                terminal_char = ''
             elif terminal_char != '':
+                print('just add the word', word)
                 new_string += ' ' + word
         elif terminal_char != '':
             new_string += ' ' + str(word)
@@ -265,7 +275,6 @@ def joinStrings(pl):
     return new_pl
 
 def run(program_list, vs, fun):
-    global assertions
     rs = []
     q = []
     pl = [ number_or_str(x) for x in program_list.split()]
@@ -302,7 +311,7 @@ for test in testing.tests:
     expected_stack = test[1]
     result_stack = run(pl, param_stack, words)
     if not cmpLists(result_stack, expected_stack):
-        print(param_stack, ' expected:', expected_stack)
+        print(result_stack, ' expected:', expected_stack)
         print('---- Failed test for: ', pl)
 
 
