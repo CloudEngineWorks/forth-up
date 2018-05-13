@@ -1,5 +1,16 @@
 
-import joyish_type_util as tu
+def number_or_str(s):
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            if s == 'True':
+                return 'True'
+            if s == 'False':
+                return 'False'
+            return s
 
 def parse_next(s, i, ls):
     while i < ls and s[i] == ' ':
@@ -21,7 +32,7 @@ def parse_word (s, i, ls):
     orig_i = i
     while i < ls and s[i] != ' ' and s[i] != ']' and s[i] != '}':
         i += 1
-    word = tu.number_or_str(s[orig_i:i])
+    word = number_or_str(s[orig_i:i])
     return word, i
 
 

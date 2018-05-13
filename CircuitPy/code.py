@@ -6,7 +6,6 @@
 # import random
 
 import joyish_tests as testing
-#import joyish_type_util as tu
 import joyish_parser as jp
 
     
@@ -82,10 +81,24 @@ def _ifte (s, pl):
         else:
             pl.insert(0, else_block)
     return [s, pl]
-def _get(s, l):
+def _get(s, l): # (dict key -- dict value)
     key = s.pop()
     dictionary = s[-1]
     s.append(dictionary[key])
+    return [s, l]
+def _set(s, l): # (dict value key -- dict)
+    key = s.pop()
+    value = s.pop()
+    dictionary = s[-1]
+    dictionary[key] = value
+    return [s, l]
+def _apply(s, l): # (dict key fun -- dict)
+    fun = s.pop()
+    key = s[-1]
+    s, l = _get(s, l)
+    s = run(fun, s)
+    s.append(key)
+    s, l = _set(s, l)
     return [s, l]
 def _swap(s, l):
     a = s.pop()
@@ -107,31 +120,14 @@ words = {
   'if': _ift,
   'if-else': _ifte,
   'get': _get,
+  'set': _set,
+  'app': _apply,
   'swap': _swap,
   'drop': _drop,
   'count-down': 'dup 1 - [ dup 1 - count-down ] if',
   'fact': 'count-down n*'
 }
-#program_list = '9 7 + 2.5 *'
-#program_list = '9 7 2.4 +'
-#program_list = '9 7 swap'
-#program_list = '1 2 3 dup'
-#program_list = '1 2 3 dup2'
-#program_list = '9 7 swap dup'
-#program_list = '1 4 fact'
-#program_list = '4 count-down'
-#program_list = '1 4 count-up'
-#program_list = '1 >R noop <R 1 assert'
-#program_list = '5 >Q noop Q> 5 assert'
-#program_list = '7 9 7 9 2 assert-n'
-#program_list = '1 2 5 2 n>R <R <R'
-#program_list = '1 2 5 >Q >Q Q> Q>'
-#program_list = '1 3 5 2 n>Q Q> Q> 3 assert 5 assert 1 assert'
-#program_list = '1 3 5 8 3 n>Q Q> Q> Q> 3 assert 5 assert 8 assert 1 assert'
-#program_list = ' 4 yes if-then 1 yes if-then 0 no yes if-then-else -1 yes if-then'
-#program_list = '0 0 1 if-then-else 1 not'
-#program_list = '1 inverse 1.0 inverse -3 inverse -1.02 inverse'
-#program_list = '1 0 1 1--inverse if-then-else'
+
 #program_list = '1 redLED 1 greenLED'
 #program_list = '1 redLED 1.5 0 1--redLED timeOut'
 #program_list = ' 1 redLED 1 0 1--redLED if-then 1 1 1--redLED if-then'
@@ -153,6 +149,7 @@ def isNumber(e):
 
 def isArray(a):
     return isinstance(a, (list,))
+
 def isDict(a):
     return isinstance(a, (dict,))
 
@@ -184,46 +181,48 @@ def cmpLists(a, b):
     return same
 
 
-def run(program_script, vs, fun):
+def runScript(program_script, vs):
     pl = jp.parse(program_script)
-    #print(program_script)
+    return run(pl, vs)
+
+def run(pl, vs):
+    global words
     while pl != None and len(pl) > 0:
         next = pl[0];
         pl = pl[1:]
         #print(vs, next, 'R:', rs, 'Q:', q)
-        if isValue(next, fun) or isArray(next) or isDict(next):
+        if isValue(next, words) or isArray(next) or isDict(next):
             vs.append(next)
             continue
         
-        if next in fun.keys():
+        if next in words.keys():
             #print(vs, next, pl)
-            if isfunction(fun[next]):
-                (vs, pl) = fun[next](vs, pl)
+            if isfunction(words[next]):
+                (vs, pl) = words[next](vs, pl)
             else:
-                expanded = jp.parse(fun[next])
-                pl = expanded + pl
+                if isinstance(words[next], str):
+                    pl = jp.parse(words[next]) + pl
+                else:
+                    pl = words[next] + pl
             continue
     return vs
 
 
 print('so far so good... ready to:')
-#run(program_list, param_stack, fundi)
-#print(param_stack, 'Assertions:', assertions)
 
 # tests
 print('Starting tests:')
 testCount = 0
 testsFailed = 0
 for test in testing.tests:
-    pl = test[0]
-    param_stack = []
+    ps = test[0]
     expected_stack = test[1]
-    result_stack = run(pl, param_stack, words)
+    result_stack = runScript(ps, [])
     testCount += 1
     if not cmpLists(result_stack, expected_stack):
         testsFailed += 1
         print(result_stack, ' expected:', expected_stack)
-        print('---- Failed test for: ', pl)
+        print('---- Failed test for: ', ps)
 if testsFailed == 0:
     print('All', testCount, 'tests passed.')
 
@@ -233,5 +232,5 @@ if testsFailed == 0:
 #    if rs == 1 or rs == -1:
 #        stack.append(str(rs))
 #        stack.append('rotary')
-#        run(stack, fun)
+#        run(stack, words)
     

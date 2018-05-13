@@ -21,10 +21,12 @@ tests = [
   ['{ a: 2 b: 3 }', [{"a":2, "b":3}]],
   ['{ a: 2 b: 4 } a get swap b get swap drop', [2, 4]],
   ['1 { a: 2 b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
-  ["1 { a: 'hello world' b: 4 } a get swap b get swap drop", [1, 'hello world', 4]],
-  ['1 { a: "hello world" b: 4 } a get swap b get swap drop', [1, "hello world", 4]],
-  ["5 { a: 'hello' b: 'world' } a get swap b get swap drop", [5, 'hello', 'world']],
-  ['5 { a: "hello" b: "world" } a get swap b get swap drop', [5, "hello", "world"]],
+  ["1 {a: 'hello world' b: 4 } a get swap b get swap drop", [1, 'hello world', 4]],
+  ['1 { a:"hello world" b: 4 } a get swap b get swap drop', [1, "hello world", 4]],
+  ["5 { a: 'hello' b:'world' } a get swap b get swap drop", [5, 'hello', 'world']],
+  ['5 { a: "hello" b: "world"} a get swap b get swap drop', [5, "hello", "world"]],
   ['1 { a: 2 b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
-  ['1 { a: 2 b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]]
+  ['1 { a: 2 b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
+  ['1 {a:2 b:4} a get 3 * a set b get 2 * b set', [1, {'a':6, 'b':8}]],
+  ['1 {a:2 b:4} a [3 *] app b [2 *] app', [1, {'a':6, 'b':8}]],
 ]
