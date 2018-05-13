@@ -25,6 +25,6 @@ tests = [
   ['1 { a: "hello world", b: 4 } a get swap b get swap drop', [1, "hello world", 4]],
   ["5 { a: 'hello', b: 'world' } a get swap b get swap drop", [5, 'hello', 'world']],
   ['5 { a: "hello", b: "world" } a get swap b get swap drop', [5, "hello", "world"]],
-#  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
-#  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]]
+  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]],
+  ['1 { a: 2, b: 4 } a get 3 * swap b get swap drop', [1, 6, 4]]
 ]
