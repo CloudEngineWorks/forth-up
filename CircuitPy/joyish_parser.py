@@ -4,11 +4,14 @@ import joyish_type_util as tu
 def parse_next(s, i, ls):
     while i < ls and s[i] == ' ':
         i += 1
-    if  i < ls and (s[i] == '"' or s[i] == "'"):
+    if i >= ls:
+        return '', i
+    
+    if s[i] == '"' or s[i] == "'":
         return parse_string(s, i, ls)
-    elif  i < ls and s[i] == '{':
+    elif s[i] == '{':
         return parse_dict(s, i, ls)
-    elif  i < ls and s[i] == '[':
+    elif s[i] == '[':
         return parse_list(s, i, ls)
     else:
         return parse_word(s, i, ls)
@@ -35,9 +38,33 @@ def parse_string(s, i_orig, ls):
     word_string = s[i_orig+1:i].replace('\\', '')
     return word_string, i+1
 
+def parse_key(s, i_orig, ls):
+    i = int(i_orig)
+    #i += 1
+    key_string = ''
+    while i < ls and s[i] != ':':
+        i += 1
+    key_string = s[i_orig:i]
+    return key_string, i+1
+    
 
 def parse_dict(s, i, ls):
-    return s, i+1
+    dict = {}
+    i += 1
+    while i < ls and s[i] == ' ':
+        i += 1
+    while i+1 < ls and s[i] != '}':
+        print ('parse_dict', s, i, dict)
+        k, i = parse_key(s, i, ls)
+        #print ('parse_key', k)
+        w, i = parse_next(s, i, ls)
+        if k != '' and w != None:
+            dict[k] = w
+        while i < ls and s[i] == ' ':
+            i += 1
+
+    
+    return dict, i+1
 
 def parse_list(s, i, ls):
     l = []
@@ -45,7 +72,8 @@ def parse_list(s, i, ls):
     while i+1 < ls and s[i] != ']':
         #print (s, i, l)
         w, i = parse_next(s, i, ls)
-        l.append(w)
+        if w != '' and w != None:
+            l.append(w)
         
     return l, i+1
 
@@ -57,7 +85,7 @@ def parse(s):
     while i < ls:
         #print ('parsing', s, i, ls)
         w, i = parse_next(s, i, ls)
-        print ('got ',w)
+        #print ('got ',w)
         if w != '' and w != None:
             l.append(w)
     
