@@ -6,6 +6,9 @@
 # import random
 
 import joyish_tests as testing
+#import joyish_type_util as tu
+import joyish_parser as jp
+
     
 # Digital input with pullup
 #red = DigitalInOut(board.D13)
@@ -69,7 +72,7 @@ def _ifte (s, pl):
     expression = s.pop()
     if expression:
         if isArray(then_block):
-            print(then_block)
+            #print(then_block)
             pl = then_block+pl
         else:
             pl.insert(0, then_block)
@@ -78,51 +81,6 @@ def _ifte (s, pl):
             pl = else_block+pl
         else:
             pl.insert(0, else_block)
-    return [s, pl]
-def _openList (s, pl):
-    thelist = []
-    next = pl[0];
-    pl = pl[1:]
-    nesting = 0
-    while ((len(pl) > 0 and next != ']') or nesting > 0):
-        thelist.append(next)
-        if next == '[':
-            nesting += 1
-        if next == ']':
-            nesting -= 1
-        next = pl[0];
-        pl = pl[1:]
-
-    pl.insert(0, thelist)
-    return [s, pl]
-
-def _openHash (s, pl):
-    hashString = ''
-    next = pl[0];
-    pl = pl[1:]
-    nesting = 0
-    while ((len(pl) > 0 and next != '}') or nesting > 0):
-        if isinstance(next, str) and next[-1] == ':':
-            next = '"'+next[:-1]+'":'
-        elif isinstance(next, str) and next[0] != '"' and next[-1] == ',':
-            next = '"'+next+'",'
-        elif isinstance(next, str) and next[0] != '"' and next[-1] != ',':
-            next = '"'+next+'"'
-        hashString += str(next)
-        if next == '{':
-            nesting += 1
-        if next == '}':
-            nesting -= 1
-        next = pl[0];
-        pl = pl[1:]
-
-    #dictionary = json.loads(hashString)
-    
-    hashString = '{'+hashString+'}'
-    print('Debug hashString '+ hashString)
-    import ast
-    dictionary = ast.literal_eval(hashString)
-    s.append(dictionary)
     return [s, pl]
 def _get(s, l):
     key = s.pop()
@@ -148,8 +106,6 @@ words = {
   '==': _eq,
   'if': _ift,
   'if-else': _ifte,
-  '[': _openList,
-  '{': _openHash,
   'get': _get,
   'swap': _swap,
   'drop': _drop,
@@ -197,23 +153,25 @@ def isNumber(e):
 
 def isArray(a):
     return isinstance(a, (list,))
+def isDict(a):
+    return isinstance(a, (dict,))
 
 #from inspect import isfunction
 def isfunction(candidate):
     return not (isinstance(candidate, str) or isinstance(candidate, (list,)))
 
-def number_or_str(s):
-    try:
-        return int(s)
-    except ValueError:
-        try:
-            return float(s)
-        except ValueError:
-            if s == 'True':
-                return 'True'
-            if s == 'False':
-                return 'False'
-            return s
+#def number_or_str(s):
+#    try:
+#        return int(s)
+#    except ValueError:
+#        try:
+#            return float(s)
+#        except ValueError:
+#            if s == 'True':
+#                return 'True'
+#            if s == 'False':
+#                return 'False'
+#            return s
 
 def cmpLists(a, b):
     same = True
@@ -225,76 +183,25 @@ def cmpLists(a, b):
         same = False
     return same
 
-def joinStrings(pl):
-    new_pl = []
-    terminal_char = ''
-    new_string = ''
-    for i in range(len(pl)):
-        word = pl[i]
-        if isinstance(word, str) and len(word) > 0:
-            if word[0] == '"' and word[len(word)-1] == '"' and terminal_char == '':
-                print('single word "string"')
-                new_string = word[1:-1]
-            elif word[0] == "'" and word[len(word)-1] == "'" and terminal_char == "":
-                print("single word 'string'")
-                new_string = word[1:-1]
-            elif word[0] == '"' and len(word) > 2 and word[-2:] == '",' and terminal_char == '':
-                print('single word "string",')
-                new_string = '"' + word[1:-2] + '",'
-            elif word[0] == "'" and len(word) > 2 and word[-2:] == "'," and terminal_char == "":
-                print("single word 'string',")
-                new_string = '"' + word[1:-2] + '",'
-            elif word[0] == '"' and terminal_char == '':
-                print('enter "string"')
-                new_string = word[1:]
-                terminal_char = '"'
-            elif word[0] == "'" and terminal_char == "":
-                print("enter 'string'")
-                new_string = word[1:]
-                terminal_char = "'"
-            elif word[len(word)-1] == terminal_char:
-                print('exit "string"')
-                new_string += ' ' + word[:-1]
-                terminal_char = ''
-            elif len(word) > 1 and word[-2:] == terminal_char + ',':
-                print('exit "string with",')
-                new_string = '"' + new_string + ' ' + word[:-2] + '",'
-                terminal_char = ''
-            elif terminal_char != '':
-                print('just add the word', word)
-                new_string += ' ' + word
-        elif terminal_char != '':
-            new_string += ' ' + str(word)
-                
-        if terminal_char == '' and new_string != '':
-            new_pl.append(new_string)
-            new_string = ''
-        elif terminal_char == '':
-            new_pl.append(word)
-    
-    return new_pl
 
-def run(program_list, vs, fun):
-    rs = []
-    q = []
-    pl = [ number_or_str(x) for x in program_list.split()]
-    pl = joinStrings(pl)
-    print(program_list)
-    while len(pl) > 0: # and not isValue(pl[-1]):
+def run(program_script, vs, fun):
+    pl = jp.parse(program_script)
+    #print(program_script)
+    while pl != None and len(pl) > 0:
         next = pl[0];
         pl = pl[1:]
         #print(vs, next, 'R:', rs, 'Q:', q)
-        if isValue(next, fun) or isArray(next):
+        if isValue(next, fun) or isArray(next) or isDict(next):
             vs.append(next)
             continue
         
         if next in fun.keys():
-            print(vs, next, pl)
+            #print(vs, next, pl)
             if isfunction(fun[next]):
                 (vs, pl) = fun[next](vs, pl)
             else:
-                next_list = [ number_or_str(x) for x in fun[next].split()]
-                pl = next_list + pl
+                expanded = jp.parse(fun[next])
+                pl = expanded + pl
             continue
     return vs
 
@@ -305,15 +212,20 @@ print('so far so good... ready to:')
 
 # tests
 print('Starting tests:')
+testCount = 0
+testsFailed = 0
 for test in testing.tests:
     pl = test[0]
     param_stack = []
     expected_stack = test[1]
     result_stack = run(pl, param_stack, words)
+    testCount += 1
     if not cmpLists(result_stack, expected_stack):
+        testsFailed += 1
         print(result_stack, ' expected:', expected_stack)
         print('---- Failed test for: ', pl)
-
+if testsFailed == 0:
+    print('All', testCount, 'tests passed.')
 
 
 #while True: #loop forever

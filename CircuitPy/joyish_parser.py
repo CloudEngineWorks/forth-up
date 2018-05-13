@@ -54,7 +54,7 @@ def parse_dict(s, i, ls):
     while i < ls and s[i] == ' ':
         i += 1
     while i+1 < ls and s[i] != '}':
-        print ('parse_dict', s, i, dict)
+        #print ('parse_dict', s, i, dict)
         k, i = parse_key(s, i, ls)
         #print ('parse_key', k)
         w, i = parse_next(s, i, ls)

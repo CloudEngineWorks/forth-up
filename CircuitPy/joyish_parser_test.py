@@ -20,7 +20,9 @@ tests = [
     ['{a:5.5 b:2.1} .456 +', [{"a":5.5, "b":2.1}, 0.456, '+']],
     [' {a:5.5 b:2.1} .456 +', [{"a":5.5, "b":2.1}, 0.456, '+']],
     ['{ a:5.5 b:2.1} .456 +', [{"a":5.5, "b":2.1}, 0.456, '+']],
-    [' { a:5.5  b:2.1 } .456 +', [{"a":5.5, "b":2.1}, 0.456, '+']],
+    [' { a:5.5  b:2.1 } .456 + { a:5.5  b:2.1 } ', [{"a":5.5, "b":2.1}, 0.456, '+', {"a":5.5, "b":2.1}]],
+    ['{a:[1 2 3] 3b_g:{a:1 y:3}}', [{"a":[1, 2, 3], "3b_g":{"a":1, "y":3}}]],
+    ['[{a:[1 2 3] 3b_g:{a:1 y:3}} abc] cdef', [[{"a":[1, 2, 3], "3b_g":{"a":1, "y":3}}, 'abc'], 'cdef']],
 ]
 
 def cmpLists(a, b):
@@ -34,17 +36,18 @@ def cmpLists(a, b):
     return same
     
 print('Starting parser tests:')
-anyFailed = False
+testCount = 0
+testsFailed = 0
 for test in tests:
     ps = test[0]
     expected_stack = test[1]
     
     #print('starting parse test for: ', ps)
     result_stack = jp.parse(ps)
-    
+    testCount += 1
     if not cmpLists(result_stack, expected_stack):
-        anyFailed = True
+        testsFailed += 1
         print(result_stack, ' expected:', expected_stack)
         print('---- Failed parse test for: ', ps)
-if not anyFailed:
-    print('All tests passed')
+if testsFailed == 0:
+    print('All', testCount, 'tests passed.')
