@@ -1,12 +1,12 @@
 import board
 #import pulseio
 # from analogio import AnalogIn
-from digitalio import DigitalInOut, Direction, Pull
+#from digitalio import DigitalInOut, Direction, Pull
 import time
 # import random
 
 import joyish_tests as testing
-#import joyish_parser as jp
+import joyish_parser as jp
 
     
 # Digital input with pullup
@@ -135,7 +135,7 @@ words = {
   'app': _apply,
   'swap': _swap,
   'drop': _drop,
-  'toggle': [[0, 1, 'if-else'], 'app'],
+  'toggle': '[0 1 if-else] app',
   'count-down': 'dup 1 - [ dup 1 - count-down ] if',
   'fact': 'count-down n*'
 }
@@ -146,6 +146,10 @@ words = {
 #program_list = ' 0 redLED 1 1 1--redLED if-then'
 #program_list = ' 1 0 1--redLED 1 1--redLED if-then-else'
 
+def isTrue(e):
+    if e != 0 and e != False and e != 'False':
+        return True
+    return False
 
 def isValue(e, fun):
     return (isinstance(e, int) or isinstance(e, float)
@@ -164,6 +168,18 @@ def isDict(a):
 def isfunction(candidate):
     return not (isinstance(candidate, str) or isinstance(candidate, (list,)))
 
+#def number_or_str(s):
+#    try:
+#        return int(s)
+#    except ValueError:
+#        try:
+#            return float(s)
+#        except ValueError:
+#            if s == 'True':
+#                return 'True'
+#            if s == 'False':
+#                return 'False'
+#            return s
 
 def cmpLists(a, b):
     same = True
@@ -176,9 +192,9 @@ def cmpLists(a, b):
     return same
 
 
-#def runScript(program_script, vs):
-#    pl = jp.parse(program_script)
-#    return run(pl, vs)
+def runScript(program_script, vs):
+    pl = jp.parse(program_script)
+    return run(pl, vs)
 
 def run(pl, vs):
     global words
@@ -195,8 +211,11 @@ def run(pl, vs):
             if isfunction(words[next]):
                 (vs, pl) = words[next](vs, pl)
             else:
-                pl = words[next] + pl
-    
+                if isinstance(words[next], str):
+                    pl = jp.parse(words[next]) + pl
+                else:
+                    pl = words[next] + pl
+            continue
     return vs
 
 print('so far so good... ready to:')
@@ -218,16 +237,10 @@ def runTests():
     if testsFailed == 0:
         print('All', testCount, 'tests passed.')
 
-rate = 0.01
-nt = time.monotonic() + rate
+
 while True: #loop forever
-    t = time.monotonic()
-    if nt < t:
-        run(['>io', 'red', 'toggle', '<io'], [])
-        nt += rate
-    if nt+1.0 < t:
-        time.sleep(5)
-        nt = time.monotonic() + rate
+    #print(red)
+    run(['>io', 'red', 'toggle', '<io'], [])
     #print (red)
     #rs = read_rotor()
     #if rs == 1 or rs == -1:
