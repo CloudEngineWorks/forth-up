@@ -1,8 +1,8 @@
-import board
+#import board
 #import pulseio
 # from analogio import AnalogIn
 #from digitalio import DigitalInOut, Direction, Pull
-import time
+#import time
 # import random
 
 import joyish_tests as testing
@@ -10,9 +10,10 @@ import joyish_parser as jp
 
     
 # Digital input with pullup
-red = DigitalInOut(board.D13)
-#red = {'value':0}
-red.direction = Direction.OUTPUT
+#red = DigitalInOut(board.D13)
+red = {}
+red['value'] = 0
+#red.direction = Direction.OUTPUT
 #green = DigitalInOut(board.D2)
 #green.direction = Direction.OUTPUT
 
@@ -21,12 +22,12 @@ red.direction = Direction.OUTPUT
 
 def _readIO(s, pl):
     global red
-    s.append({'red': red.value})
+    s.append({'red': red['value']})
     return [s, pl]
 def _writeIO(s, pl):
     global red
     a = s.pop()
-    red.value = a['red']
+    red['value'] = a['red']
     return [s, pl]
 def _dup(s, pl):
     a = s.pop()
@@ -147,12 +148,14 @@ words = {
 #program_list = ' 1 0 1--redLED 1 1--redLED if-then-else'
 
 def isTrue(e):
-    if e != 0 and e != False and e != 'False':
+    if e != 0 and e != False and e != 'False' and e != 'false':
         return True
     return False
 
 def isValue(e, fun):
-    return (isinstance(e, int) or isinstance(e, float)
+    return (isinstance(e, int)
+            or isinstance(e, float)
+            or isinstance(e, bool)
             or (isinstance(e, str) and not e in fun.keys()))
 
 def isNumber(e):
@@ -203,10 +206,13 @@ def run(pl, vs):
         pl = pl[1:]
         print(vs, next)
         if isValue(next, words) or isArray(next) or isDict(next):
-            vs.append(next)
-            continue
-        
-        if next in words.keys():
+            if next == 'true':
+                vs.append(True)
+            elif next == 'false':
+                vs.append(False)
+            else:
+                vs.append(next)
+        elif next in words.keys():
             #print(vs, next, pl)
             if isfunction(words[next]):
                 (vs, pl) = words[next](vs, pl)
@@ -215,7 +221,8 @@ def run(pl, vs):
                     pl = jp.parse(words[next]) + pl
                 else:
                     pl = words[next] + pl
-            continue
+        else:
+            print('unknown term or word:', next)
     return vs
 
 print('so far so good... ready to:')
@@ -234,13 +241,15 @@ def runTests():
             testsFailed += 1
             print(result_stack, ' expected:', expected_stack)
             print('---- Failed test for: ', ps)
+            break
     if testsFailed == 0:
         print('All', testCount, 'tests passed.')
 
+runTests()
 
-while True: #loop forever
+#while True: #loop forever
     #print(red)
-    run(['>io', 'red', 'toggle', '<io'], [])
+    #run(['>io', 'red', 'toggle', '<io'], [])
     #print (red)
     #rs = read_rotor()
     #if rs == 1 or rs == -1:
