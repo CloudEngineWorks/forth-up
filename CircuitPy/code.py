@@ -5,7 +5,7 @@ from digitalio import DigitalInOut, Direction, Pull
 import time
 # import random
 
-import joyish_tests as testing
+import parsed_tests as testing
 #import joyish_parser as jp
 
     
@@ -136,8 +136,8 @@ words = {
   'swap': _swap,
   'drop': _drop,
   'toggle': [[0, 1, 'if-else'], 'app'],
-  'count-down': 'dup 1 - [ dup 1 - count-down ] if',
-  'fact': 'count-down n*'
+  'count-down': ['dup', 1, '-', [ 'dup', 1, '-', 'count-down' ], 'if'],
+  'fact': ['count-down', 'n*']
 }
 
 #program_list = '1 redLED 1 greenLED'
@@ -148,7 +148,9 @@ words = {
 
 
 def isValue(e, fun):
-    return (isinstance(e, int) or isinstance(e, float)
+    return (isinstance(e, int)
+            or isinstance(e, float)
+            or isinstance(e, bool)
             or (isinstance(e, str) and not e in fun.keys()))
 
 def isNumber(e):
@@ -216,7 +218,7 @@ def runTests():
     for test in testing.tests:
         ps = test[0]
         expected_stack = test[1]
-        result_stack = runScript(ps, [])
+        result_stack = run(ps, [])
         testCount += 1
         if not cmpLists(result_stack, expected_stack):
             testsFailed += 1
@@ -227,18 +229,17 @@ def runTests():
         print('All', testCount, 'tests passed.')
 
 runTests()
-
-
-#rate = 0.01
-#nt = time.monotonic() + rate
-#while True: #loop forever
-#    t = time.monotonic()
-#    if nt < t:
-#        run(['>io', 'red', 'toggle', '<io'], [])
-#        nt += rate
-#    if nt+1.0 < t:
-#        time.sleep(5)
-#        nt = time.monotonic() + rate
+time.sleep(5)
+rate = 0.5
+nt = time.monotonic() + rate
+while True: #loop forever
+    t = time.monotonic()
+    if nt < t:
+        run(['>io', 'red', 'toggle', '<io'], [])
+        nt += rate
+    if nt+1.0 < t:
+        time.sleep(5)
+        nt = time.monotonic() + rate
     #print (red)
     #rs = read_rotor()
     #if rs == 1 or rs == -1:
