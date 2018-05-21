@@ -187,16 +187,23 @@ def run(pl, vs):
         pl = pl[1:]
         print(vs, next)
         if isValue(next, words) or isArray(next) or isDict(next):
-            vs.append(next)
-            continue
-        
-        if next in words.keys():
+            if next == 'true':
+                vs.append(True)
+            elif next == 'false':
+                vs.append(False)
+            else:
+                vs.append(next)
+        elif next in words.keys():
             #print(vs, next, pl)
             if isfunction(words[next]):
                 (vs, pl) = words[next](vs, pl)
             else:
-                pl = words[next] + pl
-    
+                if isinstance(words[next], str):
+                    pl = jp.parse(words[next]) + pl
+                else:
+                    pl = words[next] + pl
+        else:
+            print('unknown term or word:', next)
     return vs
 
 print('so far so good... ready to:')
@@ -215,19 +222,23 @@ def runTests():
             testsFailed += 1
             print(result_stack, ' expected:', expected_stack)
             print('---- Failed test for: ', ps)
+            break
     if testsFailed == 0:
         print('All', testCount, 'tests passed.')
 
-rate = 0.01
-nt = time.monotonic() + rate
-while True: #loop forever
-    t = time.monotonic()
-    if nt < t:
-        run(['>io', 'red', 'toggle', '<io'], [])
-        nt += rate
-    if nt+1.0 < t:
-        time.sleep(5)
-        nt = time.monotonic() + rate
+runTests()
+
+
+#rate = 0.01
+#nt = time.monotonic() + rate
+#while True: #loop forever
+#    t = time.monotonic()
+#    if nt < t:
+#        run(['>io', 'red', 'toggle', '<io'], [])
+#        nt += rate
+#    if nt+1.0 < t:
+#        time.sleep(5)
+#        nt = time.monotonic() + rate
     #print (red)
     #rs = read_rotor()
     #if rs == 1 or rs == -1:
